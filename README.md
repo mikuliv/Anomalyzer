@@ -49,7 +49,8 @@ Anomalyzer/
 ├── pretrained-models/    # ONNX-модель, scaler, список классов
 ├── runtime-system/       # docker-compose, logstash, ml-api
 ├── docs/                 # Схемы, графики, скриншоты
-└── README.md             # Это описание
+├── README-ru.md          # Это описание на Русском(RU)
+└── README-en.md          # Это описание на Английском(EN)
 ```
 
 ---
