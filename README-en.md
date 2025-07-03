@@ -122,7 +122,6 @@ All rights and credits for the original dataset belong to the University of New 
 **Ruslan Pokatilov**  
 Specialist in Information Security (10.02.05)  
 Graduated with distinction in 2025  
-Location: Russia 🇷🇺
 
 ---
 
