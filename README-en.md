@@ -24,7 +24,7 @@ Anomalyzer performs classification of network flows based on 78 numerical featur
 
 ## 🏗️ Architecture Diagram
 
-![Architecture](docs/diagrams/Elk_final_diagrams.png)
+![Architecture](docs/screenshots/Docker_Project.png)
 
 ---
 
