@@ -1,61 +1,62 @@
-# 🛡️ Anomalyzer — AI-based Anomaly Detection in Network Traffic
 
-**Anomalyzer** is a complete open-source system designed to detect network anomalies using a neural network (MLP) and an integrated ELK stack. This project was originally developed and defended as a graduation thesis in June 2025 and is now published for community use under the GPLv3 license.
+# 🛡️ Anomalyzer — система обнаружения аномалий в сетевом трафике с использованием ИИ
 
----
-
-## 📖 Overview
-
-Anomalyzer performs classification of network flows based on 78 numerical features extracted from the CICIDS2017 dataset. It provides a real-time prediction pipeline that combines a pre-trained MLP model (in ONNX format) with Logstash and FastAPI, enabling inference and visualization of network behavior in Kibana.
+**Anomalyzer** — это полностью открытая система для выявления сетевых аномалий на основе нейросети (MLP) с интеграцией в стек ELK. Проект был разработан и защищён как выпускная квалификационная работа в июне 2025 года, а теперь опубликован для сообщества под лицензией GPLv3.
 
 ---
 
-## 🎯 Project Goals
+## 📖 Общее описание
 
-- ✅ Build a robust neural network (MLP) to classify various types of network traffic
-- ✅ Export model to ONNX format for high-performance runtime inference
-- ✅ Implement FastAPI-based RESTful API for prediction delivery
-- ✅ Integrate with Logstash to accept input from structured CSV data
-- ✅ Enable visualization and monitoring using Kibana dashboards
-- ✅ Make the entire system portable and reproducible using Docker
+Anomalyzer классифицирует сетевые потоки на основе 78 числовых признаков, извлечённых из датасета CICIDS2017. Он обеспечивает прогнозирование в реальном времени с помощью предварительно обученной модели MLP (в формате ONNX), API на FastAPI и визуализации через Kibana.
 
 ---
 
-## 🏗️ Architecture Diagram
+## 🎯 Цели проекта
 
-![Architecture](docs/screenshots/Docker_Project.png)
-
----
-
-## 🔬 Technologies Used
-
-- **PyTorch** — for training the MLP model
-- **ONNX** — for converting and running model in production
-- **FastAPI** — for exposing prediction service via REST API
-- **Scikit-learn** — for preprocessing, LabelEncoder, SMOTE
-- **Elasticsearch** — storage and indexing of inference results
-- **Logstash** — reading and transforming network flow records
-- **Kibana** — dashboarding and real-time monitoring
-- **Docker & Docker Compose** — for containerization of all components
+- ✅ Обучить устойчивую нейросеть для классификации сетевого трафика
+- ✅ Экспортировать модель в формат ONNX для продакшена
+- ✅ Развернуть REST API на FastAPI для обработки запросов
+- ✅ Интегрировать с Logstash, читающим структурированные CSV
+- ✅ Визуализировать результат через Kibana
+- ✅ Обеспечить переносимость через Docker Compose
 
 ---
 
-## 📦 Repository Structure
+## 🏗️ Архитектура проекта
+
+![Архитектура](docs/screenshots/Docker_Project.png)
+
+---
+
+## 🔬 Используемые технологии
+
+- **PyTorch** — обучение нейросети
+- **ONNX** — продакшен-инференс
+- **FastAPI** — REST API
+- **Scikit-learn** — LabelEncoder, SMOTE, масштабирование
+- **Elasticsearch** — хранение предсказаний
+- **Logstash** — приём и преобразование потока данных
+- **Kibana** — мониторинг и аналитика
+- **Docker / Compose** — контейнеризация и запуск
+
+---
+
+## 📦 Структура репозитория
 
 ```bash
 Anomalyzer/
-├── model-training/       # Code to train, export, and test the MLP model
-├── pretrained-models/    # ONNX model, scaler, label encoder artifacts
-├── runtime-system/       # Docker-compose infra: Logstash, ml-api, etc.
-├── docs/                 # Diagrams, screenshots, model graphs
-└── README.md             # This file
+├── model-training/       # Код обучения, API и тестирования
+├── pretrained-models/    # ONNX-модель, scaler, список классов
+├── runtime-system/       # docker-compose, logstash, ml-api
+├── docs/                 # Схемы, графики, скриншоты
+└── README.md             # Это описание
 ```
 
 ---
 
-## 🚀 Quick Start
+## 🚀 Быстрый старт
 
-> ⚠️ Requires Docker + Docker Compose installed
+> Требуется: установленный Docker и Docker Compose
 
 ```bash
 cd runtime-system
@@ -63,15 +64,13 @@ cp .env.example .env
 docker-compose up --build
 ```
 
-Then:
-- `ml-api` will be available at `http://localhost:8000/predict`
-- `logstash` reads CSV from `logstash/data/*.csv`
-- `elasticsearch` stores results
-- `kibana` available at `http://localhost:5601`
+- `ml-api`: http://localhost:8000/predict
+- `logstash` считывает `.csv` из `logstash/data/*.csv`
+- `kibana`: http://localhost:5601
 
 ---
 
-## 🧪 Sample Prediction Request
+## 🧪 Пример запроса к API
 
 ```http
 POST /predict
@@ -82,7 +81,7 @@ Content-Type: application/json
 }
 ```
 
-Response:
+Ответ:
 ```json
 {
   "predicted_class": "BENIGN",
@@ -96,37 +95,39 @@ Response:
 
 ---
 
-## 📊 Model Performance
+## 📊 Метрики модели
 
-| Metric     | Value |
-|------------|-------|
-| Accuracy   | 0.987 |
-| F1-Score   | 0.986 |
-| ROC-AUC    | 0.993 |
-| Precision  | 0.988 |
-| Recall     | 0.984 |
-
----
-
-## 🧬 Dataset Information
-
-This project uses the **CICIDS2017** dataset provided by the [Canadian Institute for Cybersecurity](https://www.unb.ca/cic/datasets/ids-2017.html). It includes a wide range of normal and malicious traffic scenarios, annotated and processed into 78 statistical flow features.
-
-All rights and credits for the original dataset belong to the University of New Brunswick.
+| Метрика     | Значение |
+|-------------|----------|
+| Accuracy    | 0.987    |
+| F1-Score    | 0.986    |
+| ROC-AUC     | 0.993    |
+| Precision   | 0.988    |
+| Recall      | 0.984    |
 
 ---
 
-## 📘 Author
+## 🧬 Об источнике данных
 
-**Ruslan Pokatilov**  
-Specialist in Information Security (10.02.05)  
-Graduated with distinction in 2025  
+Проект использует датасет **CICIDS2017**, предоставленный Канадским институтом кибербезопасности:
+
+🔗 [https://www.unb.ca/cic/datasets/ids-2017.html](https://www.unb.ca/cic/datasets/ids-2017.html)
+
+Все права и исходная разметка принадлежат Университету Нью-Брансуика.
 
 ---
 
-## ⚖️ License
+## 👨‍💻 Автор
 
-This project is licensed under the **GNU General Public License v3.0**.
+**Руслан Покатилов**  
+Специальность: 10.02.05 — Обеспечение информационной безопасности  
+Красный диплом, защита в июне 2025 года  
 
-> You are free to use, share, and modify this project under the same license.  
-> Full text: https://www.gnu.org/licenses/gpl-3.0.html
+---
+
+## ⚖️ Лицензия
+
+Проект распространяется по лицензии **GNU General Public License v3.0**.
+
+> Вы можете использовать, изменять и распространять проект при соблюдении условий лицензии GPLv3  
+> Подробнее: https://www.gnu.org/licenses/gpl-3.0.html
