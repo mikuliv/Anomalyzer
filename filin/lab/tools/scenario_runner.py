@@ -279,8 +279,11 @@ def execute_manifest(
 
     started_monotonic = time.monotonic()
     events_path = manifest_path.parent / "execution_events.jsonl"
+    traffic_path = manifest_path.parent / "traffic_events.jsonl"
     if events_path.exists():
         events_path.unlink()
+    if traffic_path.exists():
+        traffic_path.unlink()
     completed = 0
     failed = 0
     skipped = 0
@@ -301,7 +304,7 @@ def execute_manifest(
             wait_until_planned_time(scenario.get("planned_started_at"))
 
         actual_started_at = utc_now()
-        result = execute_scenario(manifest, scenario, events_path, mock=mock)
+        result = execute_scenario(manifest, scenario, events_path, traffic_path, mock=mock)
         actual_finished_at = utc_now()
         status = result["status"]
         update_execution_fields(
@@ -378,6 +381,7 @@ def main() -> None:
         print(f"- Пропущено: {skipped}")
         print(f"- Manifest: {manifest_path}")
         print(f"- События выполнения: {manifest_path.parent / 'execution_events.jsonl'}")
+        print(f"- События трафика: {manifest_path.parent / 'traffic_events.jsonl'}")
         if failed:
             raise SystemExit(1)
         return
