@@ -38,9 +38,11 @@ def normalize_suricata_event(event: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def read_jsonl(path: Path) -> list[dict[str, Any]]:
+def read_jsonl(path: Path, required: bool = True) -> list[dict[str, Any]]:
     if not path.exists():
-        raise ValueError(f"Входной JSONL не найден: {path}")
+        if required:
+            raise ValueError(f"Входной JSONL не найден: {path}")
+        return []
     events: list[dict[str, Any]] = []
     with path.open("r", encoding="utf-8") as file:
         for line_number, line in enumerate(file, start=1):
@@ -61,7 +63,7 @@ def write_jsonl(path: Path, events: Iterable[dict[str, Any]]) -> None:
             file.write(json.dumps(event, ensure_ascii=False) + "\n")
 
 
-def normalize_execution_event(event: dict[str, Any]) -> dict[str, Any]:
+def base_normalized_event(event: dict[str, Any], event_source: str, event_type: str) -> dict[str, Any]:
     return {
         "event_id": str(uuid4()),
         "timestamp": event.get("timestamp"),
@@ -72,22 +74,76 @@ def normalize_execution_event(event: dict[str, Any]) -> dict[str, Any]:
         "label_type": event.get("type"),
         "source_role": event.get("source_role"),
         "target_role": event.get("target_role"),
-        "event_source": "scenario_executor",
-        "event_type": event.get("action"),
-        "raw_ref": None,
-        "features": {
-            "execution_status": event.get("status"),
-            "requests_sent": (event.get("details") or {}).get("requests_sent"),
-            "errors": (event.get("details") or {}).get("errors"),
-            "mock": (event.get("details") or {}).get("mock", False),
-        },
-        "raw": event,
+        "event_source": event_source,
+        "event_type": event_type,
     }
 
 
-def normalize_execution_events(input_path: Path, output_path: Path) -> int:
-    raw_events = read_jsonl(input_path)
-    normalized = [normalize_execution_event(event) for event in raw_events]
+def normalize_execution_event(event: dict[str, Any]) -> dict[str, Any]:
+    normalized = base_normalized_event(event, "scenario_executor", event.get("action"))
+    normalized.update(
+        {
+            "protocol": None,
+            "target_host": None,
+            "target_port": None,
+            "method": None,
+            "path": None,
+            "status_code": None,
+            "bytes_in": None,
+            "bytes_out": None,
+            "latency_ms": None,
+            "auth_success": None,
+            "error": None,
+            "raw_ref": None,
+            "features": {
+                "execution_status": event.get("status"),
+                "requests_sent": (event.get("details") or {}).get("requests_sent"),
+                "errors": (event.get("details") or {}).get("errors"),
+                "mock": (event.get("details") or {}).get("mock", False),
+            },
+            "raw": event,
+        }
+    )
+    return normalized
+
+
+def normalize_traffic_event(event: dict[str, Any]) -> dict[str, Any]:
+    normalized = base_normalized_event(event, event.get("event_source"), event.get("event_type"))
+    normalized.update(
+        {
+            "protocol": event.get("protocol"),
+            "target_host": event.get("target_host"),
+            "target_port": event.get("target_port"),
+            "method": event.get("method"),
+            "path": event.get("path"),
+            "status_code": event.get("status_code"),
+            "bytes_in": event.get("bytes_in"),
+            "bytes_out": event.get("bytes_out"),
+            "latency_ms": event.get("latency_ms"),
+            "auth_success": event.get("auth_success"),
+            "error": event.get("error"),
+            "raw_ref": None,
+            "features": {
+                "status": event.get("status"),
+                "is_error": bool(event.get("error")) or event.get("status") in {"error", "closed"},
+                "details": event.get("details") or {},
+            },
+            "raw": event,
+        }
+    )
+    return normalized
+
+
+def normalize_events(
+    execution_events_path: Path | None,
+    traffic_events_path: Path | None,
+    output_path: Path,
+) -> int:
+    normalized: list[dict[str, Any]] = []
+    if execution_events_path:
+        normalized.extend(normalize_execution_event(event) for event in read_jsonl(execution_events_path, required=True))
+    if traffic_events_path:
+        normalized.extend(normalize_traffic_event(event) for event in read_jsonl(traffic_events_path, required=True))
     write_jsonl(output_path, normalized)
     return len(normalized)
 
@@ -110,7 +166,9 @@ def write_dry_run_sample(output_path: Path) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Нормализация событий лабораторного стенда Филин в JSONL.")
-    parser.add_argument("--input", default=None, help="Путь к execution_events.jsonl.")
+    parser.add_argument("--input", default=None, help="Старый режим: путь к execution_events.jsonl.")
+    parser.add_argument("--execution-events", default=None, help="Путь к execution_events.jsonl.")
+    parser.add_argument("--traffic-events", default=None, help="Путь к traffic_events.jsonl.")
     parser.add_argument("--output", required=True, help="Путь к выходному normalized_events.jsonl.")
     parser.add_argument("--dry-run", action="store_true", help="Создать небольшой пример без чтения логов.")
     args = parser.parse_args()
@@ -121,10 +179,12 @@ def main() -> None:
         print(f"Dry-run нормализации записан: {output_path}")
         return
 
-    if not args.input:
-        raise ValueError("Для нормализации событий выполнения нужно указать --input.")
+    execution_path = Path(args.execution_events or args.input) if (args.execution_events or args.input) else None
+    traffic_path = Path(args.traffic_events) if args.traffic_events else None
+    if not execution_path and not traffic_path:
+        raise ValueError("Нужно указать --execution-events, --traffic-events или старый параметр --input.")
 
-    count = normalize_execution_events(Path(args.input), output_path)
+    count = normalize_events(execution_path, traffic_path, output_path)
     print(f"Нормализованные события записаны: {output_path}")
     print(f"Количество событий: {count}")
 
