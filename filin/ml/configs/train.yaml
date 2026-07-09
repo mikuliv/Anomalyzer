@@ -1,0 +1,10 @@
+dataset_path: datasets/network_events.csv
+target_column: label
+test_size: 0.2
+random_state: 42
+models:
+  - mlp
+  - random_forest
+  - xgboost
+  - lightgbm
+  - autoencoder

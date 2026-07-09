@@ -1,0 +1,4 @@
+model_path: models/filin_detector.onnx
+scaler_path: models/scaler.pkl
+feature_schema_path: models/feature_schema.json
+runtime: onnxruntime
