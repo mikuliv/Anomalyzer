@@ -61,3 +61,19 @@ Get-Content filin/lab/output/scenario_manifest.yaml -Encoding UTF8
 ```
 
 В manifest v0.3 сохраняются `schedule_mode`, `gap_seconds`, `repeat` и `run_sequence`. Повтор одного `scenario_id` допустим, если отличается `run_sequence`.
+
+## Выполнение по manifest
+
+После проверки расписания можно выполнить сценарии последовательно без ожидания планового времени:
+
+```powershell
+python filin/lab/tools/scenario_runner.py --manifest filin/lab/output/scenario_manifest.yaml --execute --allow-dry-run-manifest --max-runtime-seconds 1800
+```
+
+Для проверки без Docker-сервисов используется mock-режим:
+
+```powershell
+python filin/lab/tools/scenario_runner.py --manifest filin/lab/output/scenario_manifest.yaml --execute --allow-dry-run-manifest --mock --max-runtime-seconds 300
+```
+
+Если указан `--respect-schedule`, runner будет ждать наступления `planned_started_at`. По умолчанию сценарии выполняются последовательно без ожидания.

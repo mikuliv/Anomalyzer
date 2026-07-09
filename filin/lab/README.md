@@ -68,3 +68,53 @@ Get-Content filin/lab/output/scenario_manifest.yaml -Encoding UTF8
 ```
 
 Параметр `--gap-seconds` добавляет паузы между плановыми окнами. Параметр `--repeat` задает количество повторов natural-последовательности. Для каждого запуска сценария в manifest записывается уникальный `run_sequence`.
+
+## Запуск лабораторного стенда v0.1
+
+Запуск Docker-стенда:
+
+```powershell
+cd H:\Anomalyzer\filin\lab\docker
+docker compose -f docker-compose.lab.yml up -d --build
+docker compose -f docker-compose.lab.yml ps
+```
+
+Создание natural manifest:
+
+```powershell
+cd H:\Anomalyzer
+
+python filin/lab/tools/scenario_runner.py --scenarios filin/lab/scenarios --manifest filin/lab/output/scenario_manifest.yaml --dry-run --reset-manifest --base-time 2026-07-09T13:00:00Z --schedule-mode natural --gap-seconds 30 --repeat 1
+```
+
+Выполнение сценариев по manifest:
+
+```powershell
+python filin/lab/tools/scenario_runner.py --manifest filin/lab/output/scenario_manifest.yaml --execute --allow-dry-run-manifest --max-runtime-seconds 1800
+```
+
+Если Docker-сервисы недоступны, можно проверить pipeline без сетевой активности:
+
+```powershell
+python filin/lab/tools/scenario_runner.py --manifest filin/lab/output/scenario_manifest.yaml --execute --allow-dry-run-manifest --mock --max-runtime-seconds 300
+```
+
+Нормализация событий:
+
+```powershell
+python filin/lab/tools/normalize_events.py --input filin/lab/output/execution_events.jsonl --output filin/lab/output/normalized_events.jsonl
+```
+
+Создание отчета:
+
+```powershell
+python filin/lab/tools/dataset_report.py --manifest filin/lab/output/scenario_manifest.yaml --events filin/lab/output/execution_events.jsonl --normalized filin/lab/output/normalized_events.jsonl --output filin/lab/output/dataset_report.md
+```
+
+Чтение manifest:
+
+```powershell
+Get-Content filin/lab/output/scenario_manifest.yaml -Encoding UTF8
+```
+
+В режиме сбора датасета внешняя публикация `target-web` и `target-api` не требуется. Их localhost-порты в Docker compose предназначены только для отладки.
