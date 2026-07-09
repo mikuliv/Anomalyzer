@@ -1,0 +1,7 @@
+
+*.py linguist-language=Python
+*.yml linguist-language=YAML
+*.md text
+*.json text
+*.csv text
+*.sh text

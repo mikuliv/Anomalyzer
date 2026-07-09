@@ -1,0 +1,7 @@
+fastapi
+uvicorn
+numpy
+onnxruntime
+scikit-learn
+joblib
+httpx<0.24
