@@ -30,12 +30,21 @@ def read_manifest(path: Path) -> dict[str, Any]:
 def build_report(
     manifest: dict[str, Any],
     execution_events: list[dict[str, Any]],
+    traffic_events: list[dict[str, Any]],
     normalized_events: list[dict[str, Any]],
 ) -> str:
     scenarios = manifest.get("scenarios", [])
     labels = Counter(item.get("label", "unknown") for item in scenarios)
+    traffic_by_label = Counter(item.get("label", "unknown") for item in traffic_events)
+    traffic_by_type = Counter(item.get("event_type", "unknown") for item in traffic_events)
     benign_count = sum(1 for item in scenarios if item.get("type") == "benign")
     attack_count = sum(1 for item in scenarios if item.get("type") == "attack")
+    average_traffic = round(len(traffic_events) / len(scenarios), 2) if scenarios else 0
+    traffic_warning = (
+        "Предупреждение: объём событий недостаточен для обучения модели, но подходит для проверки pipeline."
+        if len(traffic_events) < 100
+        else "Объём traffic events достаточен для проверки расширенного pipeline."
+    )
 
     return "\n".join(
         [
@@ -50,12 +59,18 @@ def build_report(
             f"- Список labels: {', '.join(sorted(labels)) if labels else 'нет данных'}",
             f"- Распределение labels: {dict(labels)}",
             f"- Количество execution events: {len(execution_events)}",
+            f"- Количество traffic events: {len(traffic_events)}",
             f"- Количество normalized events: {len(normalized_events)}",
+            f"- Распределение traffic events по label: {dict(traffic_by_label)}",
+            f"- Распределение traffic events по event_type: {dict(traffic_by_type)}",
+            f"- Среднее количество traffic events на сценарий: {average_traffic}",
+            f"- {traffic_warning}",
             "",
             "## Ограничения",
             "",
             "- Это лабораторный датасет v0.1.",
-            "- Сценарии выполняются только в изолированной Docker-сети или mock-режиме.",
+            "- Mock-режим формирует синтетические лабораторные события и нужен для проверки pipeline.",
+            "- Для обучения итоговых моделей требуется реальный сбор трафика в Docker/VMware-стенде и последующая проверка качества датасета.",
             "- Низкоинтенсивные attack-сценарии предназначены для разметки и проверки pipeline, а не для имитации реальных атак.",
             "- Сырые PCAP, большие логи и артефакты обучения не хранятся в Git.",
             "",
@@ -67,6 +82,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Создание отчета по лабораторному прогону Филин.")
     parser.add_argument("--manifest", required=True, help="Путь к scenario_manifest.yaml.")
     parser.add_argument("--events", required=True, help="Путь к execution_events.jsonl.")
+    parser.add_argument("--traffic-events", default=None, help="Путь к traffic_events.jsonl.")
     parser.add_argument("--normalized", required=True, help="Путь к normalized_events.jsonl.")
     parser.add_argument("--output", required=True, help="Путь к Markdown-отчету.")
     args = parser.parse_args()
@@ -74,6 +90,7 @@ def main() -> None:
     report = build_report(
         manifest=read_manifest(Path(args.manifest)),
         execution_events=read_jsonl(Path(args.events)),
+        traffic_events=read_jsonl(Path(args.traffic_events)) if args.traffic_events else [],
         normalized_events=read_jsonl(Path(args.normalized)),
     )
     output = Path(args.output)
