@@ -23,3 +23,25 @@
 3. Фиксировать начало и конец каждого окна в `scenario_manifest.yaml`.
 4. Не смешивать два attack-сценария в одном временном окне.
 5. После прогона сформировать нормализованный JSONL и черновик отчета по датасету.
+
+## Проверка dry-run в Windows PowerShell
+
+Для проверки расписания без генерации сетевого трафика можно запустить все YAML-сценарии из папки:
+
+```powershell
+cd H:\Anomalyzer
+
+python filin/lab/tools/scenario_runner.py --scenarios filin/lab/scenarios --manifest filin/lab/output/scenario_manifest.yaml --dry-run --reset-manifest --base-time 2026-07-09T13:00:00Z
+
+Get-Content filin/lab/output/scenario_manifest.yaml -Encoding UTF8
+```
+
+В этом режиме `scenario_runner.py` рекурсивно читает сценарии, сначала проверяет benign-сценарии, затем attack-сценарии, рассчитывает плановые временные окна и сохраняет manifest в UTF-8.
+
+Если кириллица в консоли отображается некорректно, можно выполнить:
+
+```powershell
+chcp 65001
+[Console]::OutputEncoding = [System.Text.UTF8Encoding]::new()
+$OutputEncoding = [System.Text.UTF8Encoding]::new()
+```

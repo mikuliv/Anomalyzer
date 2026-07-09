@@ -30,3 +30,25 @@ Docker-стенд v0.1 нужен для прототипирования стр
 - хранилище: Elasticsearch;
 - просмотр событий: Kibana;
 - backend: существующий FastAPI backend Филин.
+
+## Проверка dry-run в Windows PowerShell
+
+Команда для проверки всех сценариев из корня репозитория:
+
+```powershell
+cd H:\Anomalyzer
+
+python filin/lab/tools/scenario_runner.py --scenarios filin/lab/scenarios --manifest filin/lab/output/scenario_manifest.yaml --dry-run --reset-manifest --base-time 2026-07-09T13:00:00Z
+
+Get-Content filin/lab/output/scenario_manifest.yaml -Encoding UTF8
+```
+
+Manifest сохраняется в UTF-8. Если кириллица отображается некорректно, файл нужно читать с явным указанием `-Encoding UTF8`.
+
+При необходимости можно переключить консоль PowerShell на UTF-8:
+
+```powershell
+chcp 65001
+[Console]::OutputEncoding = [System.Text.UTF8Encoding]::new()
+$OutputEncoding = [System.Text.UTF8Encoding]::new()
+```
