@@ -77,3 +77,9 @@ python filin/lab/tools/scenario_runner.py --manifest filin/lab/output/scenario_m
 ```
 
 Если указан `--respect-schedule`, runner будет ждать наступления `planned_started_at`. По умолчанию сценарии выполняются последовательно без ожидания.
+
+После выполнения появляются три уровня файлов:
+
+- `execution_events.jsonl` - служебный журнал выполнения сценариев;
+- `traffic_events.jsonl` - учебные события сетевой активности внутри сценариев;
+- `normalized_events.jsonl` - единый формат событий для дальнейшего построения признаков.

@@ -102,13 +102,13 @@ python filin/lab/tools/scenario_runner.py --manifest filin/lab/output/scenario_m
 Нормализация событий:
 
 ```powershell
-python filin/lab/tools/normalize_events.py --input filin/lab/output/execution_events.jsonl --output filin/lab/output/normalized_events.jsonl
+python filin/lab/tools/normalize_events.py --execution-events filin/lab/output/execution_events.jsonl --traffic-events filin/lab/output/traffic_events.jsonl --output filin/lab/output/normalized_events.jsonl
 ```
 
 Создание отчета:
 
 ```powershell
-python filin/lab/tools/dataset_report.py --manifest filin/lab/output/scenario_manifest.yaml --events filin/lab/output/execution_events.jsonl --normalized filin/lab/output/normalized_events.jsonl --output filin/lab/output/dataset_report.md
+python filin/lab/tools/dataset_report.py --manifest filin/lab/output/scenario_manifest.yaml --events filin/lab/output/execution_events.jsonl --traffic-events filin/lab/output/traffic_events.jsonl --normalized filin/lab/output/normalized_events.jsonl --output filin/lab/output/dataset_report.md
 ```
 
 Чтение manifest:
@@ -118,3 +118,11 @@ Get-Content filin/lab/output/scenario_manifest.yaml -Encoding UTF8
 ```
 
 В режиме сбора датасета внешняя публикация `target-web` и `target-api` не требуется. Их localhost-порты в Docker compose предназначены только для отладки.
+
+## Уровни событий датасета
+
+- `execution_events.jsonl` - служебный журнал выполнения сценариев: начало, завершение, статус и агрегированные детали.
+- `traffic_events.jsonl` - учебные события сетевой активности внутри сценариев: HTTP-запросы, DNS-like события, auth attempts, TCP connect checks и heartbeat-запросы.
+- `normalized_events.jsonl` - единый формат событий для дальнейшего построения признаков.
+
+Mock-режим формирует синтетические лабораторные события и нужен для проверки pipeline. Для обучения итоговых моделей требуется реальный сбор трафика в Docker/VMware-стенде и последующая проверка качества датасета.

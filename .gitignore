@@ -19,6 +19,13 @@ datasets/
 !filin/datasets/
 !filin/datasets/README.md
 !filin/datasets/.gitkeep
+!filin/datasets/examples/
+!filin/datasets/examples/*.csv
+!filin/datasets/examples/*.json
+!filin/datasets/examples/*.md
+!filin/datasets/schemas/
+!filin/datasets/schemas/*.json
+!filin/datasets/schemas/*.yaml
 filin/lab/output/
 filin/datasets/raw/
 filin/datasets/processed/

@@ -48,9 +48,9 @@ python filin/lab/tools/scenario_runner.py --scenarios filin/lab/scenarios --mani
 
 python filin/lab/tools/scenario_runner.py --manifest filin/lab/output/scenario_manifest.yaml --execute --allow-dry-run-manifest --max-runtime-seconds 1800
 
-python filin/lab/tools/normalize_events.py --input filin/lab/output/execution_events.jsonl --output filin/lab/output/normalized_events.jsonl
+python filin/lab/tools/normalize_events.py --execution-events filin/lab/output/execution_events.jsonl --traffic-events filin/lab/output/traffic_events.jsonl --output filin/lab/output/normalized_events.jsonl
 
-python filin/lab/tools/dataset_report.py --manifest filin/lab/output/scenario_manifest.yaml --events filin/lab/output/execution_events.jsonl --normalized filin/lab/output/normalized_events.jsonl --output filin/lab/output/dataset_report.md
+python filin/lab/tools/dataset_report.py --manifest filin/lab/output/scenario_manifest.yaml --events filin/lab/output/execution_events.jsonl --traffic-events filin/lab/output/traffic_events.jsonl --normalized filin/lab/output/normalized_events.jsonl --output filin/lab/output/dataset_report.md
 ```
 
 Для проверки без сетевой активности:
@@ -58,3 +58,5 @@ python filin/lab/tools/dataset_report.py --manifest filin/lab/output/scenario_ma
 ```powershell
 python filin/lab/tools/scenario_runner.py --manifest filin/lab/output/scenario_manifest.yaml --execute --allow-dry-run-manifest --mock --max-runtime-seconds 300
 ```
+
+`execution_events.jsonl` содержит служебные события выполнения, `traffic_events.jsonl` содержит учебные события сетевой активности, `normalized_events.jsonl` содержит единый формат для дальнейшего построения признаков. Mock-режим нужен для проверки pipeline и не заменяет реальный сбор трафика.
