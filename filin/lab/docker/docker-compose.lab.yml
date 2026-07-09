@@ -1,15 +1,21 @@
 services:
   target-web:
-    image: nginx:1.27-alpine
+    build:
+      context: ./services/target-web
+    ports:
+      - "${FILIN_TARGET_WEB_PORT:-127.0.0.1:18080}:80"
+    volumes:
+      - ../output/target-web:/var/log/nginx
     networks:
       - filin_lab_net
     expose:
       - "80"
 
   target-api:
-    image: python:3.11-slim
-    command: python -m http.server 8080
-    working_dir: /srv
+    build:
+      context: ./services/target-api
+    ports:
+      - "${FILIN_TARGET_API_PORT:-127.0.0.1:18081}:8080"
     networks:
       - filin_lab_net
       - filin_mgmt_net
@@ -17,17 +23,28 @@ services:
       - "8080"
 
   control-api:
-    image: python:3.11-slim
-    command: python -m http.server 8090
-    working_dir: /srv
+    build:
+      context: ./services/control-api
     networks:
       - filin_lab_net
     expose:
       - "8090"
 
+  traffic-client:
+    image: filin-traffic-client:0.1
+    build:
+      context: ./services/traffic-client
+    command: python client.py --action web_browsing --target target-web --duration 30 --rate-per-minute 5
+    networks:
+      - filin_lab_net
+    depends_on:
+      - target-web
+      - target-api
+      - control-api
+
   benign-client:
-    image: python:3.11-slim
-    command: python /workspace/lab/tools/benign_traffic_generator.py --dry-run --target target-web --duration 60 --rate-per-minute 5
+    image: filin-traffic-client:0.1
+    command: python client.py --action web_browsing --target target-web --duration 60 --rate-per-minute 5
     volumes:
       - ../..:/workspace:ro
     networks:
@@ -37,8 +54,8 @@ services:
       - target-api
 
   attacker-simulator:
-    image: python:3.11-slim
-    command: python /workspace/lab/tools/scenario_runner.py --scenario /workspace/lab/scenarios/attacks/port_scan.yaml --manifest /workspace/lab/output/scenario_manifest.yaml --dry-run
+    image: filin-traffic-client:0.1
+    command: python client.py --action port_scan --target target-web --duration 60 --rate-per-minute 5
     volumes:
       - ../..:/workspace:ro
       - ../output:/workspace/lab/output
@@ -50,7 +67,7 @@ services:
       - control-api
 
   scenario-runner:
-    image: python:3.11-slim
+    image: filin-traffic-client:0.1
     command: python /workspace/lab/tools/scenario_runner.py --scenario /workspace/lab/scenarios/benign/web_browsing.yaml --manifest /workspace/lab/output/scenario_manifest.yaml --dry-run
     volumes:
       - ../..:/workspace:ro
