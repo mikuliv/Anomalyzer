@@ -279,6 +279,8 @@ def execute_manifest(
 
     started_monotonic = time.monotonic()
     events_path = manifest_path.parent / "execution_events.jsonl"
+    if events_path.exists():
+        events_path.unlink()
     completed = 0
     failed = 0
     skipped = 0

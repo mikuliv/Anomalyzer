@@ -199,7 +199,14 @@ def execute_scenario(
     label = scenario.get("label")
     try:
         if label == "benign":
-            if scenario.get("scenario_id") == "benign_api_usage":
+            if scenario.get("scenario_id") == "benign_dns_activity":
+                details = {
+                    "requests_sent": 0,
+                    "errors": 0,
+                    "mock": mock,
+                    "note": "DNS-сценарий v0.1 фиксируется как окно разметки без отдельного DNS-сервиса.",
+                }
+            elif scenario.get("scenario_id") == "benign_api_usage":
                 details = execute_api_usage(scenario, mock)
             elif scenario.get("scenario_id") == "benign_file_downloads":
                 details = execute_http_paths(scenario, ["/files/sample-small.txt", "/files/sample-config.json"], mock)
