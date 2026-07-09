@@ -27,35 +27,55 @@ def read_manifest(path: Path) -> dict[str, Any]:
     return yaml.safe_load(path.read_text(encoding="utf-8")) or {"scenarios": []}
 
 
-def build_report(events: list[dict[str, Any]], manifest: dict[str, Any]) -> str:
+def build_report(
+    manifest: dict[str, Any],
+    execution_events: list[dict[str, Any]],
+    normalized_events: list[dict[str, Any]],
+) -> str:
     scenarios = manifest.get("scenarios", [])
     labels = Counter(item.get("label", "unknown") for item in scenarios)
-    benign_count = labels.get("benign", 0)
-    attack_count = max(0, len(scenarios) - benign_count)
+    benign_count = sum(1 for item in scenarios if item.get("type") == "benign")
+    attack_count = sum(1 for item in scenarios if item.get("type") == "attack")
 
     return "\n".join(
         [
-            "# Черновик отчета по датасету",
+            "# Отчет по лабораторному прогону Филин v0.1",
             "",
-            f"- Количество событий: {len(events)}",
+            f"- run_id: `{manifest.get('run_id', 'unknown')}`",
+            f"- Версия manifest: `{manifest.get('manifest_version', 'unknown')}`",
+            f"- Режим расписания: `{manifest.get('schedule_mode', 'unknown')}`",
             f"- Количество сценариев: {len(scenarios)}",
-            f"- Распределение классов: {dict(labels)}",
-            f"- Доля benign/attack: {benign_count}/{attack_count}",
-            "- Длительность прогона: рассчитывается по первому и последнему временному окну manifest.",
-            "- Известные ограничения: Docker-стенд v0.1, лабораторные сервисы, dry-run для части сценариев.",
+            f"- Количество benign-сценариев: {benign_count}",
+            f"- Количество attack-сценариев: {attack_count}",
+            f"- Список labels: {', '.join(sorted(labels)) if labels else 'нет данных'}",
+            f"- Распределение labels: {dict(labels)}",
+            f"- Количество execution events: {len(execution_events)}",
+            f"- Количество normalized events: {len(normalized_events)}",
+            "",
+            "## Ограничения",
+            "",
+            "- Это лабораторный датасет v0.1.",
+            "- Сценарии выполняются только в изолированной Docker-сети или mock-режиме.",
+            "- Низкоинтенсивные attack-сценарии предназначены для разметки и проверки pipeline, а не для имитации реальных атак.",
+            "- Сырые PCAP, большие логи и артефакты обучения не хранятся в Git.",
             "",
         ]
     )
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Создание черновика отчета по лабораторному датасету.")
-    parser.add_argument("--events", required=True, help="Путь к JSONL с нормализованными событиями.")
+    parser = argparse.ArgumentParser(description="Создание отчета по лабораторному прогону Филин.")
     parser.add_argument("--manifest", required=True, help="Путь к scenario_manifest.yaml.")
+    parser.add_argument("--events", required=True, help="Путь к execution_events.jsonl.")
+    parser.add_argument("--normalized", required=True, help="Путь к normalized_events.jsonl.")
     parser.add_argument("--output", required=True, help="Путь к Markdown-отчету.")
     args = parser.parse_args()
 
-    report = build_report(read_jsonl(Path(args.events)), read_manifest(Path(args.manifest)))
+    report = build_report(
+        manifest=read_manifest(Path(args.manifest)),
+        execution_events=read_jsonl(Path(args.events)),
+        normalized_events=read_jsonl(Path(args.normalized)),
+    )
     output = Path(args.output)
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(report, encoding="utf-8")
