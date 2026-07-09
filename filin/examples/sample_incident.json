@@ -1,0 +1,27 @@
+{
+  "incident_id": "inc-demo-000001",
+  "created_at": "2026-07-09T00:00:00+00:00",
+  "source": "lab-zeek",
+  "prediction": {
+    "predicted_class": 3,
+    "class_name": "Brute Force",
+    "confidence": 0.74,
+    "risk_level": "high",
+    "top_features": ["bytes_out", "bytes_in", "packets", "failed_logins"],
+    "mitre_candidates": []
+  },
+  "risk_level": "high",
+  "mitre_candidates": [],
+  "sigma_rule": null,
+  "status": "new",
+  "analyst_notes": [],
+  "event": {
+    "source_ip": "10.10.10.15",
+    "destination_ip": "10.10.10.20",
+    "destination_port": 22,
+    "protocol": "tcp",
+    "features": {
+      "failed_logins": 9
+    }
+  }
+}
