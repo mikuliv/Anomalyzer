@@ -7,10 +7,25 @@ from typing import Any
 
 import yaml
 
-from label_writer import append_scenario_window
+from label_writer import append_scenario_window, create_empty_manifest, save_manifest
 
 
 DEFAULT_ALLOWED_TARGETS = {"target-web", "target-api", "control-api", "internal-dns"}
+NATURAL_SCENARIO_ORDER = [
+    "benign_api_usage",
+    "benign_web_browsing",
+    "attack_port_scan",
+    "benign_dns_activity",
+    "benign_file_downloads",
+    "attack_auth_failures",
+    "benign_ssh_admin",
+    "attack_web_probe",
+    "benign_web_browsing",
+    "attack_low_rate_dos",
+    "benign_api_usage",
+    "attack_beacon_simulation",
+    "benign_dns_activity",
+]
 
 
 def load_scenario(path: Path) -> dict[str, Any]:
@@ -99,11 +114,38 @@ def scenario_sort_key(path: Path) -> tuple[int, str]:
     return group, path.name.lower()
 
 
-def discover_scenario_paths(scenario_path: Path | None, scenarios_path: Path | None) -> list[Path]:
+def discover_grouped_scenario_paths(scenarios_path: Path) -> list[Path]:
+    return sorted(scenarios_path.rglob("*.yaml"), key=scenario_sort_key)
+
+
+def discover_natural_scenario_paths(scenarios_path: Path, repeat: int) -> list[Path]:
+    discovered = {
+        load_scenario(path)["scenario_id"]: path
+        for path in scenarios_path.rglob("*.yaml")
+    }
+    ordered_paths: list[Path] = []
+    for _ in range(repeat):
+        for scenario_id in NATURAL_SCENARIO_ORDER:
+            path = discovered.get(scenario_id)
+            if path is None:
+                print(f"Предупреждение: сценарий из natural-расписания отсутствует: {scenario_id}")
+                continue
+            ordered_paths.append(path)
+    return ordered_paths
+
+
+def discover_scenario_paths(
+    scenario_path: Path | None,
+    scenarios_path: Path | None,
+    schedule_mode: str,
+    repeat: int,
+) -> list[Path]:
     if scenario_path and scenarios_path:
         raise ValueError("Нельзя одновременно указывать --scenario и --scenarios.")
     if not scenario_path and not scenarios_path:
         raise ValueError("Нужно указать либо --scenario, либо --scenarios.")
+    if repeat < 1:
+        raise ValueError("repeat должен быть не меньше 1.")
 
     if scenario_path:
         if not scenario_path.is_file():
@@ -112,22 +154,32 @@ def discover_scenario_paths(scenario_path: Path | None, scenarios_path: Path | N
 
     if scenarios_path is None or not scenarios_path.is_dir():
         raise ValueError(f"Папка сценариев не найдена: {scenarios_path}")
-    return sorted(scenarios_path.rglob("*.yaml"), key=scenario_sort_key)
+    if schedule_mode == "natural":
+        return discover_natural_scenario_paths(scenarios_path, repeat)
+    return discover_grouped_scenario_paths(scenarios_path)
 
 
 def run_dry_scenario(
     scenario: dict[str, Any],
     manifest_path: Path,
     planned_start: datetime,
+    run_sequence: int,
+    schedule_mode: str,
+    gap_seconds: int,
+    repeat: int,
 ) -> datetime:
     duration = int(scenario["duration_seconds"])
     planned_finish = planned_start + timedelta(seconds=duration)
     append_scenario_window(
         manifest_path,
         scenario,
+        run_sequence=run_sequence,
         planned_started_at=format_utc(planned_start),
         planned_finished_at=format_utc(planned_finish),
         dry_run=True,
+        schedule_mode=schedule_mode,
+        gap_seconds=gap_seconds,
+        repeat=repeat,
     )
     print(f"Dry-run сценария выполнен: {scenario['scenario_id']}")
     return planned_finish
@@ -140,18 +192,30 @@ def run_scenarios(
     dry_run: bool,
     stop_on_error: bool,
     base_time: datetime,
+    schedule_mode: str,
+    gap_seconds: int,
+    repeat: int,
 ) -> tuple[int, int]:
     success_count = 0
     error_count = 0
     planned_start = base_time
 
-    for path in paths:
+    for run_sequence, path in enumerate(paths, start=1):
         try:
             scenario = load_scenario(path)
             validate_scenario(scenario, allowed_targets)
             if not dry_run:
                 raise ValueError("В v0.1 поддерживается только режим dry-run.")
-            planned_start = run_dry_scenario(scenario, manifest_path, planned_start)
+            planned_finish = run_dry_scenario(
+                scenario,
+                manifest_path,
+                planned_start,
+                run_sequence=run_sequence,
+                schedule_mode=schedule_mode,
+                gap_seconds=gap_seconds,
+                repeat=repeat,
+            )
+            planned_start = planned_finish + timedelta(seconds=gap_seconds)
             success_count += 1
         except Exception as error:
             error_count += 1
@@ -172,15 +236,38 @@ def main() -> None:
     parser.add_argument("--stop-on-error", action="store_true", help="Остановиться при первой ошибке.")
     parser.add_argument("--reset-manifest", action="store_true", help="Удалить существующий manifest перед запуском.")
     parser.add_argument("--base-time", default=None, help="Начало первого сценария, например 2026-07-09T13:00:00Z.")
+    parser.add_argument(
+        "--schedule-mode",
+        choices=("grouped", "natural"),
+        default="grouped",
+        help="Режим расписания: grouped для проверки, natural для естественного датасета.",
+    )
+    parser.add_argument("--gap-seconds", type=int, default=0, help="Пауза между плановыми окнами сценариев.")
+    parser.add_argument("--repeat", type=int, default=1, help="Количество повторов natural-последовательности.")
     args = parser.parse_args()
+
+    if args.gap_seconds < 0:
+        raise ValueError("gap-seconds не может быть отрицательным.")
 
     manifest_path = Path(args.manifest)
     if args.reset_manifest and manifest_path.exists():
         manifest_path.unlink()
+    if args.reset_manifest:
+        save_manifest(
+            manifest_path,
+            create_empty_manifest(
+                dry_run=args.dry_run,
+                schedule_mode=args.schedule_mode,
+                gap_seconds=args.gap_seconds,
+                repeat=args.repeat,
+            ),
+        )
 
     paths = discover_scenario_paths(
         Path(args.scenario) if args.scenario else None,
         Path(args.scenarios) if args.scenarios else None,
+        schedule_mode=args.schedule_mode,
+        repeat=args.repeat,
     )
     allowed_targets = parse_allowed_targets(args.allowed_targets)
     success_count, error_count = run_scenarios(
@@ -190,6 +277,9 @@ def main() -> None:
         dry_run=args.dry_run,
         stop_on_error=args.stop_on_error,
         base_time=parse_base_time(args.base_time),
+        schedule_mode=args.schedule_mode,
+        gap_seconds=args.gap_seconds,
+        repeat=args.repeat,
     )
 
     print("Итог dry-run:")

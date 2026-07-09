@@ -45,3 +45,19 @@ chcp 65001
 [Console]::OutputEncoding = [System.Text.UTF8Encoding]::new()
 $OutputEncoding = [System.Text.UTF8Encoding]::new()
 ```
+
+## Режимы расписания
+
+`grouped` используется для технической проверки манифестов: все benign-сценарии идут одним блоком, затем все attack-сценарии.
+
+`natural` используется для будущего сбора датасета: обычная активность чередуется с контролируемыми attack-сценариями, а повторяющиеся benign-сценарии создают фон между тестовыми окнами.
+
+Пример natural-запуска с паузой 30 секунд между окнами:
+
+```powershell
+python filin/lab/tools/scenario_runner.py --scenarios filin/lab/scenarios --manifest filin/lab/output/scenario_manifest.yaml --dry-run --reset-manifest --base-time 2026-07-09T13:00:00Z --schedule-mode natural --gap-seconds 30 --repeat 1
+
+Get-Content filin/lab/output/scenario_manifest.yaml -Encoding UTF8
+```
+
+В manifest v0.3 сохраняются `schedule_mode`, `gap_seconds`, `repeat` и `run_sequence`. Повтор одного `scenario_id` допустим, если отличается `run_sequence`.

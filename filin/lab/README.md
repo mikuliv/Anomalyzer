@@ -52,3 +52,19 @@ chcp 65001
 [Console]::OutputEncoding = [System.Text.UTF8Encoding]::new()
 $OutputEncoding = [System.Text.UTF8Encoding]::new()
 ```
+
+## Режимы расписания
+
+`grouped` - технический режим проверки сценариев. В этом режиме сначала выполняются benign-сценарии, затем attack-сценарии, внутри групп используется сортировка по имени файла.
+
+`natural` - режим для будущего сбора датасета. В этом режиме контролируемые attack-сценарии вплетаются в benign-фон, чтобы поток событий был ближе к обычной сетевой активности лаборатории.
+
+Пример запуска natural-режима:
+
+```powershell
+python filin/lab/tools/scenario_runner.py --scenarios filin/lab/scenarios --manifest filin/lab/output/scenario_manifest.yaml --dry-run --reset-manifest --base-time 2026-07-09T13:00:00Z --schedule-mode natural --gap-seconds 30 --repeat 1
+
+Get-Content filin/lab/output/scenario_manifest.yaml -Encoding UTF8
+```
+
+Параметр `--gap-seconds` добавляет паузы между плановыми окнами. Параметр `--repeat` задает количество повторов natural-последовательности. Для каждого запуска сценария в manifest записывается уникальный `run_sequence`.
