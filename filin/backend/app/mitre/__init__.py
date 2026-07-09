@@ -1,1 +1,1 @@
-"""MITRE ATT&CK mapping module."""
+"""Модуль сопоставления с MITRE ATT&CK."""

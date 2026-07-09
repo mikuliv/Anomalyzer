@@ -1,1 +1,1 @@
-"""Sigma rule draft generation."""
+"""Формирование черновиков Sigma-правил."""

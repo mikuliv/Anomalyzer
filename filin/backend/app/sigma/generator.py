@@ -15,7 +15,7 @@ class SigmaGenerator:
                 f"title: {title}",
                 f"id: {rule_id}",
                 "status: experimental",
-                "description: Candidate rule generated from a Filin incident card.",
+                "description: Черновик правила подготовлен по карточке инцидента Филин.",
                 "logsource:",
                 f"  product: {DEFAULT_LOGSOURCE['product']}",
                 f"  category: {DEFAULT_LOGSOURCE['category']}",
@@ -23,7 +23,7 @@ class SigmaGenerator:
                 indent(detection, "  "),
                 "  condition: selection",
                 "falsepositives:",
-                "  - Requires validation on the lab stand",
+                "  - Требуется проверка на лабораторном стенде",
                 "level: medium",
             ]
         )
@@ -31,7 +31,7 @@ class SigmaGenerator:
             rule_id=rule_id,
             title=title,
             rule=rule,
-            note="Sigma rule is a candidate and must be validated on the test lab before operational use.",
+            note="Sigma-правило является кандидатом и требует проверки на тестовом стенде перед применением.",
         )
 
     def _build_detection(self, incident: IncidentCard) -> str:

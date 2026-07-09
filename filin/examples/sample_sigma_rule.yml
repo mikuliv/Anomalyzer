@@ -1,7 +1,7 @@
-title: Filin candidate detection for Brute Force
+title: "Филин: кандидат правила для класса Подбор учетных данных"
 id: filin-demo-bruteforce
 status: experimental
-description: Candidate Sigma rule prepared from a Filin incident card.
+description: Черновик Sigma-правила подготовлен по карточке инцидента Филин.
 logsource:
   product: network
   category: network_connection
@@ -10,8 +10,8 @@ detection:
     DestinationIp: 10.10.10.20
     DestinationPort: 22
     Protocol: tcp
-    FilinClass: Brute Force
+    FilinClass: Подбор учетных данных
   condition: selection
 falsepositives:
-  - Requires validation on the lab stand
+  - Требуется проверка на лабораторном стенде
 level: medium

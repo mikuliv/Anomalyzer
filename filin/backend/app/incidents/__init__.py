@@ -1,1 +1,1 @@
-"""Incident processing module."""
+"""Модуль обработки инцидентов."""

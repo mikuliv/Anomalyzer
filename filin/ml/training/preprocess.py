@@ -1,5 +1,5 @@
 def main() -> None:
-    print("Preprocessing placeholder. Split data before SMOTE and scaler fitting.")
+    print("Заготовка предобработки. Разделение выборки выполняется до SMOTE и fit scaler.")
 
 
 if __name__ == "__main__":

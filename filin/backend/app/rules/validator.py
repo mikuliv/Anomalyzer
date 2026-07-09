@@ -8,18 +8,18 @@ def validate_rule(rule: str) -> RuleValidationResult:
     if "condition:" not in normalized or "detection:" not in normalized:
         status = "rejected"
         matched_events = 0
-        recommendation = "Add Sigma detection and condition sections before lab validation."
-        notes = ["The rule structure is incomplete."]
+        recommendation = "Добавить разделы Sigma detection и condition перед проверкой на стенде."
+        notes = ["Структура правила неполная."]
     elif "experimental" in normalized:
         status = "needs_review"
         matched_events = 3
-        recommendation = "Run the candidate against Zeek or Suricata lab events and review false positives."
-        notes = ["Experimental rules require analyst review and replay on the validation stand."]
+        recommendation = "Проверить кандидат на лабораторных событиях Zeek или Suricata и разобрать ложные срабатывания."
+        notes = ["Экспериментальные правила требуют проверки аналитиком и воспроизведения на стенде."]
     else:
         status = "approved"
         matched_events = 5
-        recommendation = "Rule can be used in demo scenarios after documenting test coverage."
-        notes = ["No obvious false-positive pattern found in the prototype validator."]
+        recommendation = "Правило можно использовать в демонстрационных сценариях после описания покрытия проверками."
+        notes = ["Прототип валидатора не выявил очевидного источника ложных срабатываний."]
 
     return RuleValidationResult(
         rule_id=f"validation-{uuid4().hex[:8]}",

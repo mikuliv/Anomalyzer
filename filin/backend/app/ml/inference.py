@@ -4,14 +4,14 @@ from app.ml.features import extract_features
 
 
 class InferenceService:
-    """Prototype inference service prepared for ONNX Runtime and scaler wiring."""
+    """Прототип сервиса инференса с подготовкой к подключению ONNX Runtime и scaler."""
 
     class_names = {
-        0: "Normal",
+        0: "Норма",
         1: "DDoS",
-        2: "PortScan",
-        3: "Brute Force",
-        4: "Web Attack",
+        2: "Сканирование портов",
+        3: "Подбор учетных данных",
+        4: "Web-атака",
         5: "Botnet",
     }
 
@@ -46,8 +46,8 @@ class InferenceService:
         return 0
 
     def _risk_for_class(self, class_name: str, confidence: float):
-        if class_name in {"DDoS", "Brute Force", "Web Attack"} and confidence >= 0.7:
+        if class_name in {"DDoS", "Подбор учетных данных", "Web-атака"} and confidence >= 0.7:
             return "high"
-        if class_name in {"PortScan", "Botnet"}:
+        if class_name in {"Сканирование портов", "Botnet"}:
             return "medium"
         return "low"

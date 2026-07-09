@@ -4,7 +4,7 @@
   "source": "lab-zeek",
   "prediction": {
     "predicted_class": 3,
-    "class_name": "Brute Force",
+    "class_name": "Подбор учетных данных",
     "confidence": 0.74,
     "risk_level": "high",
     "top_features": ["bytes_out", "bytes_in", "packets", "failed_logins"],
@@ -14,7 +14,7 @@
         "technique_id": "T1110",
         "technique_name": "Brute Force",
         "confidence": 0.78,
-        "explanation": "Repeated failed authentication attempts are consistent with brute force activity."
+        "explanation": "Повторяющиеся неуспешные попытки аутентификации соответствуют подбору учетных данных."
       }
     ]
   },
@@ -25,10 +25,10 @@
       "technique_id": "T1110",
       "technique_name": "Brute Force",
       "confidence": 0.78,
-      "explanation": "Repeated failed authentication attempts are consistent with brute force activity."
+      "explanation": "Повторяющиеся неуспешные попытки аутентификации соответствуют подбору учетных данных."
     }
   ],
-  "sigma_rule": "title: Filin candidate detection for Brute Force",
+  "sigma_rule": "title: Филин: кандидат правила для класса Подбор учетных данных",
   "status": "new",
   "analyst_notes": [],
   "event": {

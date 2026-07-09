@@ -5,4 +5,4 @@ DEFAULT_LOGSOURCE = {
 
 
 def title_for_class(class_name: str) -> str:
-    return f"Filin candidate detection for {class_name}"
+    return f"Филин: кандидат правила для класса {class_name}"

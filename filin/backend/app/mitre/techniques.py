@@ -8,34 +8,34 @@ MITRE_BY_CLASS: dict[str, list[MitreCandidate]] = {
             technique_id="T1498",
             technique_name="Network Denial of Service",
             confidence=0.72,
-            explanation="High packet or SYN rate can indicate network-layer denial of service activity.",
+            explanation="Высокая интенсивность пакетов или SYN-запросов может указывать на сетевой отказ в обслуживании.",
         )
     ],
-    "PortScan": [
+    "Сканирование портов": [
         MitreCandidate(
             tactic="discovery",
             technique_id="T1046",
             technique_name="Network Service Discovery",
             confidence=0.76,
-            explanation="Many destination ports against one or more hosts matches service discovery behavior.",
+            explanation="Большое число портов назначения для одного или нескольких узлов соответствует разведке сетевых сервисов.",
         )
     ],
-    "Brute Force": [
+    "Подбор учетных данных": [
         MitreCandidate(
             tactic="credential-access",
             technique_id="T1110",
             technique_name="Brute Force",
             confidence=0.78,
-            explanation="Repeated failed authentication attempts are consistent with brute force activity.",
+            explanation="Повторяющиеся неуспешные попытки аутентификации соответствуют подбору учетных данных.",
         )
     ],
-    "Web Attack": [
+    "Web-атака": [
         MitreCandidate(
             tactic="initial-access",
             technique_id="T1190",
             technique_name="Exploit Public-Facing Application",
             confidence=0.68,
-            explanation="Suspicious web errors or payload indicators can point to public-facing application exploitation.",
+            explanation="Подозрительные web-ошибки или признаки полезной нагрузки могут указывать на эксплуатацию публичного приложения.",
         )
     ],
     "Botnet": [
@@ -44,7 +44,7 @@ MITRE_BY_CLASS: dict[str, list[MitreCandidate]] = {
             technique_id="T1071",
             technique_name="Application Layer Protocol",
             confidence=0.55,
-            explanation="Periodic beacon-like traffic is only a cautious candidate and requires confirmation with DNS, HTTP or TLS logs.",
+            explanation="Периодический beacon-трафик является только осторожным кандидатом и требует подтверждения по DNS, HTTP или TLS-логам.",
         )
     ],
 }

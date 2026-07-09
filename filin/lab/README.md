@@ -1,13 +1,13 @@
-# Filin Lab
+# Лаборатория Филин
 
 Лабораторный стенд нужен для проверки сценариев атак, качества детекции и применимости Sigma-кандидатов.
 
 Минимальный состав:
 
-- attacker: Kali Linux;
-- victim: Ubuntu или Windows;
-- sensor: Zeek или Suricata;
+- атакующий узел: Kali Linux;
+- целевой узел: Ubuntu или Windows;
+- сенсор: Zeek или Suricata;
 - collector: Logstash или Filebeat;
-- storage: Elasticsearch;
+- хранилище: Elasticsearch;
 - backend: FastAPI;
 - dashboard: Kibana или будущий web-ui.

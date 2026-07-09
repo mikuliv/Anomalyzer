@@ -1,1 +1,1 @@
-"""ML inference and feature extraction."""
+"""Инференс ML-модели и извлечение признаков."""

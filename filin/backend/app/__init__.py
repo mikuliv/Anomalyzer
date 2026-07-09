@@ -1,1 +1,1 @@
-"""Filin backend package."""
+"""Пакет backend платформы Филин."""

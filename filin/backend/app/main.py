@@ -35,7 +35,7 @@ def create_incident(request: IncidentCreateRequest):
 def get_incident(incident_id: str):
     incident = incident_service.get(incident_id)
     if incident is None:
-        raise HTTPException(status_code=404, detail="Incident not found")
+        raise HTTPException(status_code=404, detail="Инцидент не найден")
     return incident
 
 
@@ -43,7 +43,7 @@ def get_incident(incident_id: str):
 def generate_sigma(request: SigmaGenerateRequest):
     incident = incident_service.get(request.incident_id)
     if incident is None:
-        raise HTTPException(status_code=404, detail="Incident not found")
+        raise HTTPException(status_code=404, detail="Инцидент не найден")
     return sigma_generator.generate(incident)
 
 

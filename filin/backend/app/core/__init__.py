@@ -1,1 +1,1 @@
-"""Core backend settings and schemas."""
+"""Базовые настройки и схемы backend."""

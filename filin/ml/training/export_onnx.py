@@ -1,5 +1,5 @@
 def main() -> None:
-    print("ONNX export placeholder. Persist model, scaler metadata and feature schema together.")
+    print("Заготовка экспорта ONNX. Модель, scaler, метаданные и feature schema сохраняются вместе.")
 
 
 if __name__ == "__main__":
