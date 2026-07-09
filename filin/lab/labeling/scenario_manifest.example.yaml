@@ -1,0 +1,23 @@
+manifest_version: "0.1"
+lab_name: Филин v0.1
+run_id: lab-run-example
+timezone: UTC
+scenarios:
+  - scenario_id: benign_web_browsing
+    type: benign
+    label: benign
+    source_role: benign-client
+    target_role: target-web
+    started_at: "2026-07-09T08:00:00Z"
+    finished_at: "2026-07-09T08:10:00Z"
+    notes:
+      - Пример окна обычного HTTP-трафика.
+  - scenario_id: attack_port_scan
+    type: attack
+    label: port_scan
+    source_role: attacker-simulator
+    target_role: target-web
+    started_at: "2026-07-09T08:20:00Z"
+    finished_at: "2026-07-09T08:22:00Z"
+    notes:
+      - Пример окна контролируемого лабораторного сценария.

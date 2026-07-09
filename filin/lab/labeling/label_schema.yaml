@@ -1,0 +1,30 @@
+schema_version: "0.1"
+labels:
+  benign:
+    title: Нормальная активность
+    description: Обычный лабораторный трафик без признаков контролируемого attack-сценария.
+  port_scan:
+    title: Сканирование портов
+    description: Контролируемая проверка внутренних портов из allowlist.
+  auth_failures:
+    title: Ошибки авторизации
+    description: Ограниченная серия неуспешных входов на тестовой учетной записи.
+  web_probe:
+    title: Web-probe
+    description: Безопасные диагностические обращения к web-сервису без вредоносных payload-ов.
+  low_rate_dos:
+    title: Низкоинтенсивный всплеск трафика
+    description: Лабораторная имитация краткого роста числа запросов с жесткими лимитами.
+  beacon_simulation:
+    title: Beacon-симуляция
+    description: Периодические обращения к внутреннему control-api.
+required_event_fields:
+  - timestamp
+  - source_ip
+  - destination_ip
+  - source_role
+  - target_role
+  - protocol
+  - event_source
+  - scenario_id
+  - label

@@ -1,0 +1,19 @@
+scenario_id: benign_file_downloads
+type: benign
+name: Скачивание небольших файлов
+description: Получение небольших тестовых файлов с внутреннего web-сервиса.
+source_role: benign-client
+target_role: target-web
+expected_label: benign
+mitre: null
+duration_seconds: 420
+intensity: низкая
+safety_limits:
+  allowed_targets:
+    - target-web
+  max_rate: 6/min
+  max_duration_seconds: 420
+  external_network_allowed: false
+notes:
+  - Размер файлов должен быть небольшим и заранее подготовленным на стенде.
+  - Сценарий не обращается к внешним хранилищам.

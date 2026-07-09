@@ -1,0 +1,19 @@
+scenario_id: benign_api_usage
+type: benign
+name: Обычные обращения к API
+description: Периодические запросы к внутреннему API для имитации работы приложения.
+source_role: benign-client
+target_role: target-api
+expected_label: benign
+mitre: null
+duration_seconds: 900
+intensity: средняя
+safety_limits:
+  allowed_targets:
+    - target-api
+  max_rate: 20/min
+  max_duration_seconds: 900
+  external_network_allowed: false
+notes:
+  - Разрешены только безопасные GET-запросы к внутреннему API.
+  - Сценарий нужен для фоновой активности.

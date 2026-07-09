@@ -1,0 +1,26 @@
+scenario_id: attack_web_probe
+type: attack
+name: Безопасный web-probe
+description: Проверка реакции внутреннего web-сервиса на безвредные диагностические пути без вредоносных payload-ов.
+source_role: attacker-simulator
+target_role: target-web
+expected_label: web_probe
+mitre:
+  technique_id: T1190
+  technique_name: Exploit Public-Facing Application
+duration_seconds: 150
+intensity: низкая
+allowed_targets:
+  - target-web
+max_rate: 8/min
+max_duration_seconds: 150
+external_network_allowed: false
+safety_limits:
+  allowed_targets:
+    - target-web
+  max_rate: 8/min
+  max_duration_seconds: 150
+  external_network_allowed: false
+notes:
+  - Используются только безвредные тестовые пути.
+  - Реальные exploit payload-ы запрещены.
