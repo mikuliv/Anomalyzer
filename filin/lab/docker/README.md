@@ -60,3 +60,42 @@ python filin/lab/tools/scenario_runner.py --manifest filin/lab/output/scenario_m
 ```
 
 `execution_events.jsonl` содержит служебные события выполнения, `traffic_events.jsonl` содержит учебные события сетевой активности, `normalized_events.jsonl` содержит единый формат для дальнейшего построения признаков. Mock-режим нужен для проверки pipeline и не заменяет реальный сбор трафика.
+
+## Проверка доступности сервисов
+
+Сначала нужно проверить состояние контейнеров:
+
+```powershell
+cd H:\Anomalyzer\filin\lab\docker
+docker compose -f docker-compose.lab.yml ps
+```
+
+Проверка опубликованных localhost-портов:
+
+```powershell
+curl http://127.0.0.1:18080/
+curl http://127.0.0.1:18081/
+curl http://127.0.0.1:18081/health
+```
+
+Если `control-api` не опубликован наружу, его нужно проверять из Docker-сети:
+
+```powershell
+docker compose -f docker-compose.lab.yml exec traffic-client python -c "import requests; print(requests.get('http://control-api:8090/health').text)"
+```
+
+Автоматическая проверка host-режима:
+
+```powershell
+cd H:\Anomalyzer
+python filin/lab/tools/check_lab_services.py --mode host
+```
+
+Автоматическая проверка Docker DNS-имён выполняется из контейнера, подключенного к `filin_lab_net`:
+
+```powershell
+cd H:\Anomalyzer\filin\lab\docker
+docker compose -f docker-compose.lab.yml exec traffic-client python /workspace/lab/tools/check_lab_services.py --mode docker
+```
+
+В текущей конфигурации `target-api` доступен внутри Docker-сети как `http://target-api:8080`, а `control-api` как `http://control-api:8090`.

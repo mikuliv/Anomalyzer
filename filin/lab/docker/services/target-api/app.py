@@ -26,6 +26,16 @@ def log_event(event_type: str, details: dict[str, Any]) -> None:
     print(json.dumps(event, ensure_ascii=False), flush=True)
 
 
+@app.get("/")
+def root() -> dict[str, str]:
+    log_event("root", {"status": "ok"})
+    return {
+        "service": "target-api",
+        "status": "ok",
+        "description": "Лабораторный API-сервис стенда Филин",
+    }
+
+
 @app.get("/health")
 def health() -> dict[str, str]:
     log_event("health", {"status": "ok"})

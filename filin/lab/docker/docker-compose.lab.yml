@@ -34,7 +34,9 @@ services:
     image: filin-traffic-client:0.1
     build:
       context: ./services/traffic-client
-    command: python client.py --action web_browsing --target target-web --duration 30 --rate-per-minute 5
+    command: python -c "import time; time.sleep(86400)"
+    volumes:
+      - ../..:/workspace:ro
     networks:
       - filin_lab_net
     depends_on:
