@@ -9,5 +9,17 @@ __pycache__/
 *.onnx
 *.pkl
 *.npy
+*.pcap
+*.pcapng
+*.log
+*.jsonl
+*.csv
 data/
 datasets/
+!filin/datasets/
+!filin/datasets/README.md
+!filin/datasets/.gitkeep
+filin/lab/output/
+filin/datasets/raw/
+filin/datasets/processed/
+filin/ml/artifacts/
