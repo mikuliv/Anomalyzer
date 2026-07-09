@@ -1,128 +1,113 @@
-# Лабораторный стенд Филин
+# Лабораторный стенд «Филин»
 
-Лабораторный стенд Филин v0.1 предназначен для воспроизводимого сбора собственного датасета сетевых событий. Он используется для генерации обычного фонового трафика, запуска контролируемых лабораторных сценариев, сбора логов сенсоров, нормализации событий, разметки временных окон и подготовки данных для будущего обучения моделей.
+## Назначение стенда
 
-Стенд рассчитан только на изолированную лабораторную сеть. Сценарии не должны обращаться к внешним адресам и должны использовать allowlist внутренних сервисов.
+Лабораторный стенд «Филин» предназначен для воспроизводимого формирования учебных событий сетевой активности, проверки сценариев, нормализации событий, подготовки признаков и будущей оценки моделей обнаружения инцидентов.
 
-## Версии стенда
+Стенд рассчитан только на изолированную лабораторную среду. Он не предназначен для атак на внешние системы.
 
-Docker-стенд v0.1 нужен для прототипирования структуры, проверки сценариев, формата разметки и инструментов подготовки датасета. Он не заменяет VMware-стенд v0.2, где позже можно будет развернуть более реалистичную сеть с отдельными виртуальными машинами, полноценными сенсорами и управляемыми узлами.
+## Принципы безопасности
 
-## Общий поток
+- Внешние адреса запрещены.
+- Сценарии используют allowlist внутренних сервисов.
+- Attack-сценарии являются безопасными лабораторными имитациями.
+- Реальные вредоносные payload-ы, эксплойты и команды для внешних целей не используются.
+- Сырые PCAP, большие логи и чувствительные данные не коммитятся в Git.
 
-`сценарий -> трафик -> сенсор -> лог -> нормализация -> разметка -> датасет`
+## Состав стенда
 
-1. YAML-сценарий задает тип активности, источник, цель, длительность, интенсивность и ограничения.
-2. Генератор выполняет только безопасные обращения к внутренним лабораторным сервисам.
-3. Zeek или Suricata фиксируют сетевые события.
-4. Логи приводятся к единому JSONL-формату.
-5. Manifest связывает временные окна сценариев с метками.
-6. Dataset report описывает состав, ограничения и распределение классов.
+- `target-web` - учебный web-сервис.
+- `target-api` - учебный API-сервис.
+- `control-api` - учебный heartbeat/control endpoint.
+- `traffic-client` - контейнер для безопасной генерации лабораторного трафика.
+- `scenario_runner.py` - планирование и выполнение сценариев.
+- `scenario_executor.py` - безопасное выполнение сценариев и запись событий.
+- Zeek/Suricata/Filebeat/Elasticsearch/Kibana - заготовки контура мониторинга.
+- FastAPI backend «Филин» - прототип API детекции и инцидентов.
 
-## Минимальный состав
+## Сценарии
 
-- целевые сервисы: web и API;
-- генератор обычного трафика;
-- контейнер контролируемых лабораторных сценариев;
-- управляющий scenario-runner;
-- сенсоры: Zeek и Suricata или их заготовки;
-- collector: Filebeat или Logstash;
-- хранилище: Elasticsearch;
-- просмотр событий: Kibana;
-- backend: существующий FastAPI backend Филин.
+Сценарии описываются YAML-файлами в `filin/lab/scenarios/`. В них задаются тип активности, метка, источник, цель, длительность, интенсивность и ограничения безопасности.
 
-## Проверка dry-run в Windows PowerShell
+Benign-сценарии моделируют обычную активность. Attack-сценарии моделируют только безопасные лабораторные признаки подозрительного поведения внутри стенда.
 
-Команда для проверки всех сценариев из корня репозитория:
+## Manifest-разметка
 
-```powershell
-cd H:\Anomalyzer
+`scenario_manifest.yaml` фиксирует план прогона:
 
-python filin/lab/tools/scenario_runner.py --scenarios filin/lab/scenarios --manifest filin/lab/output/scenario_manifest.yaml --dry-run --reset-manifest --base-time 2026-07-09T13:00:00Z
+- `run_id`;
+- `run_sequence`;
+- `scenario_id`;
+- `type`;
+- `label`;
+- плановое и фактическое время;
+- длительность;
+- статус выполнения.
 
-Get-Content filin/lab/output/scenario_manifest.yaml -Encoding UTF8
-```
-
-Manifest сохраняется в UTF-8. Если кириллица отображается некорректно, файл нужно читать с явным указанием `-Encoding UTF8`.
-
-При необходимости можно переключить консоль PowerShell на UTF-8:
-
-```powershell
-chcp 65001
-[Console]::OutputEncoding = [System.Text.UTF8Encoding]::new()
-$OutputEncoding = [System.Text.UTF8Encoding]::new()
-```
+Manifest не является датасетом. Он используется для разметки и анализа.
 
 ## Режимы расписания
 
-`grouped` - технический режим проверки сценариев. В этом режиме сначала выполняются benign-сценарии, затем attack-сценарии, внутри групп используется сортировка по имени файла.
+`grouped` - технический режим, где benign-сценарии идут отдельно от attack-сценариев.
 
-`natural` - режим для будущего сбора датасета. В этом режиме контролируемые attack-сценарии вплетаются в benign-фон, чтобы поток событий был ближе к обычной сетевой активности лаборатории.
+`natural` - режим, где attack-сценарии вплетаются в benign-фон. Этот режим используется для более реалистичного лабораторного pipeline.
 
-Пример запуска natural-режима:
+## Dry-run
 
-```powershell
-python filin/lab/tools/scenario_runner.py --scenarios filin/lab/scenarios --manifest filin/lab/output/scenario_manifest.yaml --dry-run --reset-manifest --base-time 2026-07-09T13:00:00Z --schedule-mode natural --gap-seconds 30 --repeat 1
+Dry-run проверяет сценарии и создает manifest без выполнения сетевых действий.
 
-Get-Content filin/lab/output/scenario_manifest.yaml -Encoding UTF8
-```
+## Mock execute
 
-Параметр `--gap-seconds` добавляет паузы между плановыми окнами. Параметр `--repeat` задает количество повторов natural-последовательности. Для каждого запуска сценария в manifest записывается уникальный `run_sequence`.
+Mock execute выполняет manifest без сетевой активности и формирует синтетические лабораторные события. Он нужен для проверки pipeline, структуры данных и построения признаков.
 
-## Запуск лабораторного стенда v0.1
+Mock-режим не заменяет реальный сбор трафика и не должен использоваться как финальный датасет для обучения итоговых моделей.
 
-Запуск Docker-стенда:
+## Docker execute
 
-```powershell
-cd H:\Anomalyzer\filin\lab\docker
-docker compose -f docker-compose.lab.yml up -d --build
-docker compose -f docker-compose.lab.yml ps
-```
+Docker execute выполняет безопасные обращения к внутренним сервисам Docker-стенда. Все цели должны входить в allowlist. Внешние адреса запрещены.
 
-Создание natural manifest:
+## Уровни событий
+
+- `execution_events.jsonl` - служебный журнал выполнения сценариев.
+- `traffic_events.jsonl` - учебные события сетевой активности внутри сценариев.
+- `normalized_events.jsonl` - единый формат событий для дальнейшего построения признаков.
+- `windows_v0_1.csv` - window-level датасет признаков.
+- `flows_v0_1.csv` - flow-level прототип датасета признаков.
+
+## Нормализация
+
+Нормализация объединяет служебные события и traffic events в общий JSONL-формат. Этот слой еще не является обучающим датасетом: перед ML требуется feature extraction.
+
+## Отчёт по прогону
+
+`dataset_report.md` фиксирует `run_id`, версию manifest, число сценариев, распределение labels, количество execution events, traffic events и normalized events.
+
+## Типовой порядок запуска
 
 ```powershell
 cd H:\Anomalyzer
 
 python filin/lab/tools/scenario_runner.py --scenarios filin/lab/scenarios --manifest filin/lab/output/scenario_manifest.yaml --dry-run --reset-manifest --base-time 2026-07-09T13:00:00Z --schedule-mode natural --gap-seconds 30 --repeat 1
-```
 
-Выполнение сценариев по manifest:
-
-```powershell
-python filin/lab/tools/scenario_runner.py --manifest filin/lab/output/scenario_manifest.yaml --execute --allow-dry-run-manifest --max-runtime-seconds 1800
-```
-
-Если Docker-сервисы недоступны, можно проверить pipeline без сетевой активности:
-
-```powershell
 python filin/lab/tools/scenario_runner.py --manifest filin/lab/output/scenario_manifest.yaml --execute --allow-dry-run-manifest --mock --max-runtime-seconds 300
-```
 
-Нормализация событий:
-
-```powershell
 python filin/lab/tools/normalize_events.py --execution-events filin/lab/output/execution_events.jsonl --traffic-events filin/lab/output/traffic_events.jsonl --output filin/lab/output/normalized_events.jsonl
-```
 
-Создание отчета:
-
-```powershell
 python filin/lab/tools/dataset_report.py --manifest filin/lab/output/scenario_manifest.yaml --events filin/lab/output/execution_events.jsonl --traffic-events filin/lab/output/traffic_events.jsonl --normalized filin/lab/output/normalized_events.jsonl --output filin/lab/output/dataset_report.md
+
+Get-Content filin/lab/output/dataset_report.md -Encoding UTF8
 ```
 
-Чтение manifest:
+Построение признаков:
 
 ```powershell
-Get-Content filin/lab/output/scenario_manifest.yaml -Encoding UTF8
+python filin/ml/features/build_windows_dataset.py --manifest filin/lab/output/scenario_manifest.yaml --events filin/lab/output/normalized_events.jsonl --output filin/lab/output/datasets/windows_v0_1.csv --window-seconds 60
+
+python filin/ml/features/build_flows_dataset.py --manifest filin/lab/output/scenario_manifest.yaml --events filin/lab/output/normalized_events.jsonl --output filin/lab/output/datasets/flows_v0_1.csv
 ```
 
-В режиме сбора датасета внешняя публикация `target-web` и `target-api` не требуется. Их localhost-порты в Docker compose предназначены только для отладки.
+## Ограничения v0.1
 
-## Уровни событий датасета
+Mock-режим формирует синтетические лабораторные события без сетевой активности. Он нужен для проверки pipeline. Для обучения итоговых моделей требуется реальный сбор трафика в Docker/VMware-стенде.
 
-- `execution_events.jsonl` - служебный журнал выполнения сценариев: начало, завершение, статус и агрегированные детали.
-- `traffic_events.jsonl` - учебные события сетевой активности внутри сценариев: HTTP-запросы, DNS-like события, auth attempts, TCP connect checks и heartbeat-запросы.
-- `normalized_events.jsonl` - единый формат событий для дальнейшего построения признаков.
-
-Mock-режим формирует синтетические лабораторные события и нужен для проверки pipeline. Для обучения итоговых моделей требуется реальный сбор трафика в Docker/VMware-стенде и последующая проверка качества датасета.
+Docker-стенд v0.1 является прототипом и не заменяет отдельный стенд с виртуальными машинами, выделенными сенсорами и расширенной фиксацией PCAP.

@@ -1,30 +1,109 @@
-# ML-раздел Филин
+# Машинное обучение в проекте «Филин»
 
-Раздел содержит заготовки для обучения, оценки и экспорта моделей обнаружения сетевых аномалий.
+## Назначение
 
-Планируемый пайплайн:
+Раздел `filin/ml/` отвечает за подготовку признаков, обучение, оценку и будущий экспорт моделей обнаружения инцидентов информационной безопасности.
 
-1. Загрузка и нормализация датасета.
-2. Построение агрегированных признаков.
-3. Разделение на train/test до любых операций балансировки.
-4. SMOTE только на train-части.
-5. Fit scaler только на train-части.
-6. Сохранение схемы признаков.
-7. Сравнение MLP, RandomForest, XGBoost/LightGBM и AutoEncoder.
-8. Экспорт выбранной модели в ONNX.
+## Источники данных
 
-Сырые события не являются готовыми признаками для модели. Для обучения используются агрегированные window-level и flow-level датасеты:
+Основной источник v0.1 - лабораторный pipeline:
+
+```text
+scenario_manifest.yaml -> execution_events.jsonl -> traffic_events.jsonl -> normalized_events.jsonl
+```
+
+В дальнейшем к нему должны добавиться события Zeek, Suricata и другие нормализованные источники.
+
+## Pipeline подготовки данных
 
 ```text
 raw events -> normalized events -> feature extraction -> windows.csv / flows.csv -> training
 ```
 
-Первый каталог признаков находится в `filin/ml/features/feature_catalog.yaml`. Сборщики датасетов:
+Сырые события не являются готовыми признаками для модели. Для обучения используются агрегированные window-level и flow-level датасеты.
+
+## Feature extraction
+
+Модуль `filin/ml/features/` содержит первый прототип построения признаков:
+
+- `feature_catalog.yaml` - каталог признаков v0.1;
+- `schema.py` - metadata и forbidden leakage columns;
+- `validators.py` - базовая проверка CSV;
+- `build_windows_dataset.py` - построение window-level датасета;
+- `build_flows_dataset.py` - построение flow-level прототипа.
+
+## Feature catalog
+
+Каталог признаков описывает назначение, источник, уровень агрегации и риск утечки разметки. Поля `scenario_id`, `run_sequence`, planned/actual time, `label`, `label_type` и `mitre_technique_id` не должны попадать в модельные признаки.
+
+## Window-level dataset
+
+Window-level датасет строится по временным окнам:
 
 ```powershell
 python filin/ml/features/build_windows_dataset.py --manifest filin/lab/output/scenario_manifest.yaml --events filin/lab/output/normalized_events.jsonl --output filin/lab/output/datasets/windows_v0_1.csv --window-seconds 60
+```
 
+Каждая строка содержит metadata и числовые признаки окна. Разметка берется из manifest.
+
+## Flow-level dataset
+
+Flow-level датасет v0.1 является прототипом:
+
+```powershell
 python filin/ml/features/build_flows_dataset.py --manifest filin/lab/output/scenario_manifest.yaml --events filin/lab/output/normalized_events.jsonl --output filin/lab/output/datasets/flows_v0_1.csv
 ```
 
-`scenario_id`, `run_sequence` и planned time используются только для разметки и анализа, но не являются входными признаками модели.
+Он группирует normalized events по `source_role`, `target_role`, `scenario_id` и `event_type`. После подключения Zeek/Suricata этот слой должен быть расширен реальными сетевыми flow-полями.
+
+## Обучение моделей
+
+Планируемые семейства моделей:
+
+- MLP;
+- RandomForest;
+- XGBoost/LightGBM;
+- AutoEncoder;
+- простые baseline-модели для сравнения.
+
+Сначала выполняется train/test split, и только после этого допускается балансировка классов и обучение scaler/encoder только на train-части.
+
+## Оценка качества
+
+Accuracy не является основной метрикой для задач обнаружения инцидентов. Важны precision, recall, F1, confusion matrix, ROC-AUC/PR-AUC и анализ ошибок по классам.
+
+Отдельно нужно оценивать:
+
+- ложные срабатывания на benign-активности;
+- пропуски attack-сценариев;
+- устойчивость модели к изменению расписания;
+- качество по каждому классу инцидента.
+
+## Предотвращение data leakage
+
+Metadata используется для разметки и анализа, но не для обучения модели. Запрещенные для признаков поля:
+
+- `scenario_id`;
+- `run_sequence`;
+- `planned_started_at`;
+- `planned_finished_at`;
+- `actual_started_at`;
+- `actual_finished_at`;
+- `label`;
+- `label_type`;
+- `mitre_technique_id`.
+
+## Ограничения v0.1
+
+- Mock-события являются синтетическими и подходят для проверки pipeline.
+- Для итогового обучения нужен реальный сбор трафика в Docker/VMware-стенде.
+- Flow-level датасет пока не является полноценной заменой Zeek conn/http/dns логов.
+- Feature catalog v0.1 будет уточняться после первых экспериментов.
+
+## План развития
+
+- Подключить Zeek/Suricata как источники flow и application logs.
+- Расширить feature catalog и схемы датасетов.
+- Добавить train/test split и версионирование экспериментов.
+- Сравнить модели и выбрать baseline.
+- Подготовить экспорт выбранной модели в ONNX.
