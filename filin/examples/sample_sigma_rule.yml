@@ -1,0 +1,17 @@
+title: Filin candidate detection for Brute Force
+id: filin-demo-bruteforce
+status: experimental
+description: Candidate Sigma rule prepared from a Filin incident card.
+logsource:
+  product: network
+  category: network_connection
+detection:
+  selection:
+    DestinationIp: 10.10.10.20
+    DestinationPort: 22
+    Protocol: tcp
+    FilinClass: Brute Force
+  condition: selection
+falsepositives:
+  - Requires validation on the lab stand
+level: medium

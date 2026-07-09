@@ -1,0 +1,1 @@
+"""Sigma rule draft generation."""

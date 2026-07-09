@@ -8,11 +8,27 @@
     "confidence": 0.74,
     "risk_level": "high",
     "top_features": ["bytes_out", "bytes_in", "packets", "failed_logins"],
-    "mitre_candidates": []
+    "mitre_candidates": [
+      {
+        "tactic": "credential-access",
+        "technique_id": "T1110",
+        "technique_name": "Brute Force",
+        "confidence": 0.78,
+        "explanation": "Repeated failed authentication attempts are consistent with brute force activity."
+      }
+    ]
   },
   "risk_level": "high",
-  "mitre_candidates": [],
-  "sigma_rule": null,
+  "mitre_candidates": [
+    {
+      "tactic": "credential-access",
+      "technique_id": "T1110",
+      "technique_name": "Brute Force",
+      "confidence": 0.78,
+      "explanation": "Repeated failed authentication attempts are consistent with brute force activity."
+    }
+  ],
+  "sigma_rule": "title: Filin candidate detection for Brute Force",
   "status": "new",
   "analyst_notes": [],
   "event": {

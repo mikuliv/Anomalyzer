@@ -1,4 +1,5 @@
 from app.core.schemas import NetworkEvent, PredictionResult
+from app.mitre.mapper import map_class_to_mitre
 from app.ml.features import extract_features
 
 
@@ -28,7 +29,7 @@ class InferenceService:
             confidence=confidence,
             risk_level=risk_level,
             top_features=top_features,
-            mitre_candidates=[],
+            mitre_candidates=map_class_to_mitre(class_name),
         )
 
     def _heuristic_class(self, event: NetworkEvent, features: dict[str, float]) -> int:

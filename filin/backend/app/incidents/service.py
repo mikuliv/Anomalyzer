@@ -4,6 +4,7 @@ from uuid import uuid4
 from app.core.schemas import IncidentCard, NetworkEvent
 from app.incidents.risk import normalize_risk
 from app.ml.inference import InferenceService
+from app.sigma.generator import SigmaGenerator
 from app.storage.repository import IncidentRepository
 
 
@@ -11,6 +12,7 @@ class IncidentService:
     def __init__(self, repository: IncidentRepository, inference_service: InferenceService) -> None:
         self.repository = repository
         self.inference_service = inference_service
+        self.sigma_generator = SigmaGenerator()
 
     def create_from_event(self, event: NetworkEvent, source: str) -> IncidentCard:
         prediction = self.inference_service.predict(event)
@@ -27,6 +29,7 @@ class IncidentService:
             analyst_notes=[],
             event=event,
         )
+        incident.sigma_rule = self.sigma_generator.generate(incident).rule
         self.repository.save(incident)
         return incident
 
