@@ -78,24 +78,39 @@ curl http://127.0.0.1:18081/
 curl http://127.0.0.1:18081/health
 ```
 
-Если `control-api` не опубликован наружу, его нужно проверять из Docker-сети:
-
-```powershell
-docker compose -f docker-compose.lab.yml exec traffic-client python -c "import requests; print(requests.get('http://control-api:8090/health').text)"
-```
-
-Автоматическая проверка host-режима:
+`--mode host` запускается с хоста и проверяет только опубликованные `localhost`-порты:
 
 ```powershell
 cd H:\Anomalyzer
 python filin/lab/tools/check_lab_services.py --mode host
 ```
 
-Автоматическая проверка Docker DNS-имён выполняется из контейнера, подключенного к `filin_lab_net`:
+`--mode docker` проверяет Docker DNS-имена и должен выполняться внутри контейнера, подключенного к сети стенда. Если запустить этот режим напрямую с хоста, имена `target-web`, `target-api` и `control-api` не будут разрешаться.
+
+Проверка Docker DNS-имён с хоста через `traffic-client`:
+
+```powershell
+cd H:\Anomalyzer
+python filin/lab/tools/check_lab_services.py --mode compose-exec
+```
+
+То же самое вручную:
 
 ```powershell
 cd H:\Anomalyzer\filin\lab\docker
 docker compose -f docker-compose.lab.yml exec traffic-client python /workspace/lab/tools/check_lab_services.py --mode docker
 ```
 
-В текущей конфигурации `target-api` доступен внутри Docker-сети как `http://target-api:8080`, а `control-api` как `http://control-api:8090`.
+Ручная проверка отдельных сервисов внутри Docker-сети:
+
+```powershell
+cd H:\Anomalyzer\filin\lab\docker
+
+docker compose -f docker-compose.lab.yml exec traffic-client python -c "import requests; print(requests.get('http://target-web/').status_code)"
+
+docker compose -f docker-compose.lab.yml exec traffic-client python -c "import requests; print(requests.get('http://target-api:8080/health').text)"
+
+docker compose -f docker-compose.lab.yml exec traffic-client python -c "import requests; print(requests.get('http://control-api:8090/health').text)"
+```
+
+В текущей конфигурации `target-web` доступен внутри Docker-сети как `http://target-web/`, `target-api` как `http://target-api:8080/health`, а `control-api` как `http://control-api:8090/health`. С хоста используются опубликованные адреса `http://127.0.0.1:18080/` и `http://127.0.0.1:18081/health`.
