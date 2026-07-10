@@ -18,8 +18,8 @@ def create_empty_manifest(
     repeat: int = 1,
 ) -> dict[str, Any]:
     return {
-        "manifest_version": "0.3",
-        "lab_name": "Филин v0.1",
+        "manifest_version": "0.4",
+        "lab_name": "Филин v0.2",
         "run_id": f"run-{datetime.now(UTC).strftime('%Y%m%d%H%M%S')}",
         "timezone": "UTC",
         "dry_run": dry_run,
@@ -36,8 +36,8 @@ def load_manifest(path: Path) -> dict[str, Any]:
         return create_empty_manifest(dry_run=True)
 
     data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
-    data.setdefault("manifest_version", "0.3")
-    data.setdefault("lab_name", "Филин v0.1")
+    data.setdefault("manifest_version", "0.4")
+    data.setdefault("lab_name", "Филин v0.2")
     data.setdefault("run_id", f"run-{datetime.now(UTC).strftime('%Y%m%d%H%M%S')}")
     data.setdefault("timezone", "UTC")
     data.setdefault("dry_run", True)

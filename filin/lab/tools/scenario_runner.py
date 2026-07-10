@@ -12,7 +12,7 @@ from label_writer import append_scenario_window, create_empty_manifest, save_man
 from scenario_executor import execute_scenario, utc_now
 
 
-DEFAULT_ALLOWED_TARGETS = {"target-web", "target-api", "control-api", "internal-dns"}
+DEFAULT_ALLOWED_TARGETS = {"target-web", "target-api", "control-api", "internal-dns", "target-ssh-sim"}
 NATURAL_SCENARIO_ORDER = [
     "benign_api_usage",
     "benign_web_browsing",
@@ -272,6 +272,10 @@ def execute_manifest(
     respect_schedule: bool,
     max_runtime_seconds: int,
     mock: bool,
+    compose_file: Path | None = None,
+    compose_project_dir: Path | None = None,
+    time_scale: float = 1.0,
+    random_seed: int = 42,
 ) -> tuple[int, int, int]:
     manifest = load_manifest(manifest_path)
     if manifest.get("dry_run") and not allow_dry_run_manifest:
@@ -304,7 +308,11 @@ def execute_manifest(
             wait_until_planned_time(scenario.get("planned_started_at"))
 
         actual_started_at = utc_now()
-        result = execute_scenario(manifest, scenario, events_path, traffic_path, mock=mock)
+        result = execute_scenario(
+            manifest, scenario, events_path, traffic_path, mock=mock,
+            compose_file=compose_file, compose_project_dir=compose_project_dir,
+            time_scale=time_scale, random_seed=random_seed,
+        )
         actual_finished_at = utc_now()
         status = result["status"]
         update_execution_fields(
@@ -312,7 +320,7 @@ def execute_manifest(
             actual_started_at,
             actual_finished_at,
             status,
-            [f"Режим mock: {mock}", f"Детали: {result['details']}"],
+            [f"Режим выполнения: {'mock' if mock else 'docker'}", f"Детали: {result['details']}"],
         )
         if status == "completed":
             completed += 1
@@ -360,12 +368,22 @@ def build_parser() -> argparse.ArgumentParser:
         help="Разрешить выполнение по manifest, созданному в dry-run.",
     )
     parser.add_argument("--mock", action="store_true", help="Записать события выполнения без сетевой активности.")
+    parser.add_argument("--docker", action="store_true", help="Выполнить сценарии в изолированной Docker-сети.")
+    parser.add_argument("--compose-file", default="filin/lab/docker/docker-compose.lab.yml", help="Путь к compose-файлу стенда.")
+    parser.add_argument("--compose-project-dir", default="filin/lab/docker", help="Рабочая папка Docker Compose.")
+    parser.add_argument("--time-scale", type=float, default=1.0, help="Масштаб длительности от 0 до 1.")
+    parser.add_argument("--random-seed", type=int, default=42, help="Seed воспроизводимого порядка действий.")
     return parser
 
 
 def main() -> None:
     parser = build_parser()
     args = parser.parse_args()
+
+    if args.mock and args.docker:
+        raise ValueError("Нельзя одновременно указывать --mock и --docker.")
+    if args.time_scale <= 0 or args.time_scale > 1:
+        raise ValueError("time-scale должен быть больше 0 и не больше 1.")
 
     if args.dry_run and args.execute:
         raise ValueError("Нельзя одновременно указывать --dry-run и --execute.")
@@ -384,6 +402,10 @@ def main() -> None:
             respect_schedule=args.respect_schedule,
             max_runtime_seconds=args.max_runtime_seconds,
             mock=args.mock,
+            compose_file=Path(args.compose_file) if args.docker else None,
+            compose_project_dir=Path(args.compose_project_dir) if args.docker else None,
+            time_scale=args.time_scale,
+            random_seed=args.random_seed,
         )
         print("Итог выполнения:")
         print(f"- Завершено: {completed}")
