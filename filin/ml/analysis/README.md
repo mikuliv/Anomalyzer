@@ -6,6 +6,10 @@
 
 Docker client observations фиксируют результаты действий между контейнерами со стороны `traffic-client`. Они не являются независимыми сетевыми flow; следующий этап предусматривает подключение Zeek/Suricata.
 
+## Аудит v0.2.2
+
+Окна Docker datasets строятся по фактическим интервалам `scenario execution`, определённым парой `run_sequence + scenario_id`. Служебные события `scenario_executor` не являются client observations. После исправления временной разметки все Docker client observations корректно назначаются окнам соответствующих scenario executions. Однако каждый attack-класс пока представлен только одним независимым выполнением на run, поэтому данных недостаточно для достоверного обучения многоклассовой модели.
+
 ```powershell
 python filin/ml/analysis/run_provenance.py --run-dir filin/lab/output/runs/run_docker_001 --windows-dataset filin/lab/output/datasets/windows_v0_1_run_docker_001.csv
 
