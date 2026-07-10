@@ -46,3 +46,10 @@ def get_beacon() -> dict[str, str]:
 def post_beacon(payload: dict[str, Any] | None = None) -> dict[str, str]:
     log_event("beacon_post", {"payload": payload or {}, "purpose": "учебный heartbeat"})
     return {"status": "accepted"}
+
+@app.post("/sensor-marker/{marker_type}/{nonce}")
+def sensor_marker(marker_type: str, nonce: str) -> dict[str, str]:
+    if marker_type not in {"start", "end"}:
+        return {"status": "ignored"}
+    log_event("sensor_marker", {"marker_type": marker_type, "nonce": nonce})
+    return {"status": "accepted"}

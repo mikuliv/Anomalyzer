@@ -6,5 +6,5 @@ from schema import CLIENT_CORE_V0_2,CLIENT_EXTENDED_V0_2,PACKET_FEATURES,get_fea
 class FeatureProfiles(unittest.TestCase):
  def test_profiles(self):
   self.assertEqual(get_feature_profile('legacy_v0_1'),[]);self.assertTrue(set(CLIENT_CORE_V0_2)<=set(CLIENT_EXTENDED_V0_2));self.assertFalse(set(CLIENT_EXTENDED_V0_2)&PACKET_FEATURES);self.assertFalse(set(CLIENT_CORE_V0_2)&set(get_metadata_columns()))
- def test_network_sensor_is_planned(self):
-  with self.assertRaises(ValueError):get_feature_profile('network_sensor_v0_3')
+ def test_network_sensor_is_available(self):
+  self.assertIn('flow_count', get_feature_profile('network_sensor_v0_3'))

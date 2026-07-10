@@ -73,6 +73,9 @@ def run_docker_scenario(manifest: dict[str, Any], scenario: dict[str, Any], comp
         "--run-sequence", str(scenario["run_sequence"]), "--duration-seconds", str(duration),
         "--max-events", str(max_events), "--max-rate", str(max_rate), "--random-seed", str(random_seed), "--output-format", "jsonl",
     ]
+    execution_id = scenario.get("execution_id")
+    if execution_id:
+        command.extend(["--execution-id", str(execution_id), "--marker-nonce", str(scenario.get("scenario_parameter_hash", execution_id))[:24]])
     completed = subprocess.run(command, cwd=compose_project_dir, capture_output=True, text=True, encoding="utf-8", timeout=max(30, duration + 30), check=False)
     events: list[dict[str, Any]] = []
     invalid = 0

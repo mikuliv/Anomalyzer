@@ -205,16 +205,22 @@ def main() -> None:
     parser.add_argument("--max-rate", required=True, type=float)
     parser.add_argument("--random-seed", required=True, type=int)
     parser.add_argument("--output-format", default="jsonl")
+    parser.add_argument("--execution-id", default=None)
+    parser.add_argument("--marker-nonce", default=None)
     args = parser.parse_args()
     try:
         validate_args(args)
         rng = random.Random(args.random_seed)
+        if args.execution_id and args.marker_nonce:
+            requests.post(f"http://control-api:8090/sensor-marker/start/{args.marker_nonce}", timeout=2.0)
         events = scenario_events(args, rng)
         delay = 1.0 / args.max_rate
         for index, event in enumerate(events):
             emit(event)
             if index + 1 < len(events):
                 time.sleep(delay * rng.uniform(0.85, 1.15))
+        if args.execution_id and args.marker_nonce:
+            requests.post(f"http://control-api:8090/sensor-marker/end/{args.marker_nonce}", timeout=2.0)
     except KeyError:
         print("Неизвестный лабораторный сценарий.", file=sys.stderr)
         raise SystemExit(3)

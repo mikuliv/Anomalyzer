@@ -73,9 +73,9 @@ services:
       context: .
       dockerfile: Dockerfile.sensor-capture
     network_mode: "service:traffic-client"
-    command: ["-i", "eth0", "-U", "-w", "/capture/capture.pcap", "not", "port", "53"]
+    command: ["-i", "any", "-U", "-w", "/capture/capture.pcap", "not", "port", "53"]
     volumes:
-      - ../output/sensor_preflight:/capture
+      - filin_sensor_capture:/capture
     cap_add:
       - NET_RAW
       - NET_ADMIN
@@ -184,3 +184,6 @@ networks:
     name: ${FILIN_MONITOR_NET:-filin_monitor_net}
   filin_mgmt_net:
     name: ${FILIN_MGMT_NET:-filin_mgmt_net}
+volumes:
+  filin_sensor_capture:
+    name: ${FILIN_SENSOR_CAPTURE_VOLUME:-filin_sensor_capture}

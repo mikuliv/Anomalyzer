@@ -42,6 +42,7 @@ CLIENT_CORE_V0_2 = [
 ]
 CLIENT_EXTENDED_V0_2 = CLIENT_CORE_V0_2 + ["suspicious_path_count", "file_download_count", "unique_url_count", "unique_target_host_count", "unique_target_port_count"]
 PACKET_FEATURES = {"total_packets", "packets_in", "packets_out", "tcp_syn_count", "tcp_ack_count", "tcp_rst_count", "tcp_fin_count", "syn_rate", "rst_rate", "protocol_id", "dst_port"}
+NETWORK_SENSOR_V0_3 = ["flow_count","tcp_flow_count","udp_flow_count","icmp_flow_count","unique_destination_ip_count","unique_destination_port_count","unique_service_count","flow_duration_mean","flow_duration_median","flow_duration_std","flow_duration_p95","flow_duration_max","orig_bytes_total","resp_bytes_total","total_bytes","orig_bytes_mean","resp_bytes_mean","orig_resp_bytes_ratio","orig_packets_total","resp_packets_total","total_packets","orig_packets_mean","resp_packets_mean","orig_resp_packets_ratio","successful_connection_count","failed_connection_count","rejected_connection_count","reset_connection_count","connection_success_rate","connection_failure_rate","unique_conn_state_count","http_request_count","http_get_count","http_post_count","http_2xx_count","http_4xx_count","http_5xx_count","http_error_rate","unique_http_host_count","unique_uri_count","http_request_body_bytes","http_response_body_bytes","dns_query_count","dns_success_count","dns_error_count","unique_dns_query_count","unique_dns_answer_count","dns_error_rate","flow_interarrival_mean","flow_interarrival_std","flow_periodicity_score","flow_burst_score"]
 
 
 def get_feature_profile(name: str) -> list[str]:
@@ -52,7 +53,7 @@ def get_feature_profile(name: str) -> list[str]:
     if name == "legacy_v0_1":
         return []
     if name == "network_sensor_v0_3":
-        raise ValueError("Профиль network_sensor_v0_3 планируется после подключения Zeek/Suricata.")
+        return list(NETWORK_SENSOR_V0_3)
     raise ValueError(f"Неизвестный профиль признаков: {name}")
 
 FORBIDDEN_FEATURE_COLUMNS = [
