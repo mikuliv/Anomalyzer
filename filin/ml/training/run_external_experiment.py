@@ -55,6 +55,7 @@ def main() -> None:
     report_path = REPO_ROOT / "filin" / "ml" / "reports" / f"{experiment_name}.md"
     result = train_baselines(
         dataset_path=train_dataset,
+        additional_train_dataset_paths=None,
         external_test_dataset_path=test_dataset,
         target=args.target,
         output_dir=output_dir,

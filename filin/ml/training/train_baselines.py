@@ -10,6 +10,7 @@ import joblib
 import pandas as pd
 from sklearn.metrics import (
     accuracy_score,
+    balanced_accuracy_score,
     classification_report,
     confusion_matrix,
     precision_recall_fscore_support,
@@ -18,6 +19,7 @@ from sklearn.metrics import (
 from model_registry import MODEL_PRIORITY, build_baseline_models
 from report_writer import write_training_report
 from split_dataset import prepare_xy, safe_train_test_split, validate_external_dataset_compatibility
+from dataset_utils import calculate_file_sha256, dataset_run_ids
 
 
 LIMITATIONS = [
@@ -42,6 +44,7 @@ def calculate_metrics(y_true: pd.Series, y_pred: Any) -> dict[str, Any]:
     weighted = precision_recall_fscore_support(y_true, y_pred, average="weighted", zero_division=0)
     return {
         "accuracy": float(accuracy_score(y_true, y_pred)),
+        "balanced_accuracy": float(balanced_accuracy_score(y_true, y_pred)),
         "macro_precision": float(macro[0]),
         "macro_recall": float(macro[1]),
         "macro_f1": float(macro[2]),
@@ -68,6 +71,7 @@ def select_best_model(metrics_by_model: dict[str, dict[str, Any]]) -> str:
 
 def train_baselines(
     dataset_path: Path,
+    additional_train_dataset_paths: list[Path] | None,
     external_test_dataset_path: Path | None,
     target: str,
     output_dir: Path,
@@ -76,18 +80,39 @@ def train_baselines(
     random_state: int,
     min_class_count: int,
 ) -> dict[str, Any]:
-    df = load_dataset(dataset_path)
+    train_paths = [dataset_path, *(additional_train_dataset_paths or [])]
+    absolute_paths = [path.resolve() for path in train_paths]
+    if len(set(absolute_paths)) != len(absolute_paths):
+        raise ValueError("Один и тот же train dataset указан повторно.")
+    if external_test_dataset_path and external_test_dataset_path.resolve() in set(absolute_paths):
+        raise ValueError("External test dataset нельзя включать в train datasets.")
+    train_frames = [load_dataset(path) for path in train_paths]
+    df = pd.concat(train_frames, ignore_index=True)
+    if len(df) < 50:
+        raise ValueError("В объединённом train dataset меньше 50 строк.")
     X, y, feature_columns, excluded_columns = prepare_xy(df, target)
     class_distribution = {str(label): int(count) for label, count in y.value_counts().sort_index().items()}
     low_count = {label: count for label, count in class_distribution.items() if count < min_class_count}
     split_warnings: list[str] = []
     if low_count:
         split_warnings.append(f"Есть классы с числом объектов меньше min_class_count={min_class_count}: {low_count}")
+    low_support_train = {label: count for label, count in class_distribution.items() if count < 5}
+    if low_support_train:
+        split_warnings.append(f"В train dataset есть классы с support меньше 5: {low_support_train}")
 
     compatibility_info: dict[str, Any] = {"all_features_present": True, "extra_test_columns": 0}
     test_class_distribution: dict[str, int] | None = None
+    source_hashes = {str(path): calculate_file_sha256(path) for path in train_paths}
     if external_test_dataset_path:
         test_df = load_dataset(external_test_dataset_path)
+        if len(test_df) < 50:
+            split_warnings.append("В external test dataset меньше 50 строк.")
+        test_hash = calculate_file_sha256(external_test_dataset_path)
+        if test_hash in source_hashes.values():
+            split_warnings.append("SHA-256 external test dataset совпадает с одним из train datasets.")
+        overlapping_run_ids = dataset_run_ids(df) & dataset_run_ids(test_df)
+        if overlapping_run_ids:
+            split_warnings.append("Train и test содержат совпадающие run_id: " + ", ".join(sorted(overlapping_run_ids)))
         compatibility_warnings = validate_external_dataset_compatibility(df, test_df, feature_columns, target)
         split_warnings.extend(compatibility_warnings)
         extra_columns = sorted(set(test_df.columns) - set(feature_columns) - {target})
@@ -98,6 +123,9 @@ def train_baselines(
         y_test = test_df[target]
         split_method = "external_test_dataset"
         test_class_distribution = {str(label): int(count) for label, count in y_test.value_counts().sort_index().items()}
+        low_support_test = {label: count for label, count in test_class_distribution.items() if count < 5}
+        if low_support_test:
+            split_warnings.append(f"В external test dataset есть классы с support меньше 5: {low_support_test}")
     else:
         X_train, X_test, y_train, y_test, split_method, warnings = safe_train_test_split(
             X,
@@ -129,7 +157,10 @@ def train_baselines(
 
     metadata = {
         "dataset_path": str(dataset_path),
+        "training_datasets": [str(path) for path in train_paths],
+        "training_dataset_sha256": source_hashes,
         "external_test_dataset_path": str(external_test_dataset_path) if external_test_dataset_path else None,
+        "external_test_dataset_sha256": calculate_file_sha256(external_test_dataset_path) if external_test_dataset_path else None,
         "target": target,
         "feature_columns": feature_columns,
         "excluded_columns": excluded_columns,
@@ -154,6 +185,9 @@ def train_baselines(
     write_training_report(
         path=report_path,
         dataset_path=str(dataset_path),
+        training_datasets=[str(path) for path in train_paths],
+        training_dataset_sha256=source_hashes,
+        external_test_dataset_sha256=calculate_file_sha256(external_test_dataset_path) if external_test_dataset_path else None,
         external_test_dataset_path=str(external_test_dataset_path) if external_test_dataset_path else None,
         target=target,
         feature_columns=feature_columns,
@@ -180,6 +214,7 @@ def train_baselines(
 def main() -> None:
     parser = argparse.ArgumentParser(description="Обучение baseline-моделей Филин на лабораторном датасете признаков.")
     parser.add_argument("--dataset", required=True, help="Путь к CSV-датасету признаков.")
+    parser.add_argument("--additional-train-dataset", action="append", default=[], help="Дополнительный CSV для объединённого train-набора; параметр можно повторять.")
     parser.add_argument("--external-test-dataset", default=None, help="Путь к отдельному CSV для external test.")
     parser.add_argument("--target", default="label", help="Целевая колонка.")
     parser.add_argument("--output-dir", required=True, help="Папка для сохранения модели и metadata.")
@@ -191,6 +226,7 @@ def main() -> None:
 
     result = train_baselines(
         dataset_path=Path(args.dataset),
+        additional_train_dataset_paths=[Path(path) for path in args.additional_train_dataset],
         external_test_dataset_path=Path(args.external_test_dataset) if args.external_test_dataset else None,
         target=args.target,
         output_dir=Path(args.output_dir),

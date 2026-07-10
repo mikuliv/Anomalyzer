@@ -87,7 +87,8 @@ def run_docker_scenario(manifest: dict[str, Any], scenario: dict[str, Any], comp
 
 def execute_scenario(manifest: dict[str, Any], scenario: dict[str, Any], events_path: Path, traffic_path: Path, mock: bool, compose_file: Path | None = None, compose_project_dir: Path | None = None, time_scale: float = 1.0, random_seed: int = 42) -> dict[str, Any]:
     planned_duration = int(scenario.get("duration_seconds", 1))
-    effective_duration = max(1, round(planned_duration * time_scale))
+    # traffic-client допускает не более минуты фактической активности на сценарий.
+    effective_duration = min(60, max(1, round(planned_duration * time_scale)))
     mode = "mock" if mock else "docker"
     start_details = {"execution_mode": mode, "planned_duration_seconds": planned_duration, "effective_duration_seconds": effective_duration, "time_scale": time_scale}
     append_event(events_path, execution_event(manifest, scenario, "scenario_started", "ok", start_details))
