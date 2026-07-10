@@ -54,6 +54,33 @@ def prepare_xy(df: pd.DataFrame, target_column: str) -> tuple[pd.DataFrame, pd.S
     return df[feature_columns], df[target_column], feature_columns, sorted(set(excluded_columns))
 
 
+def validate_external_dataset_compatibility(
+    train_df: pd.DataFrame,
+    test_df: pd.DataFrame,
+    feature_columns: list[str],
+    target_column: str,
+) -> list[str]:
+    warnings: list[str] = []
+    if target_column not in train_df.columns:
+        raise ValueError(f"В train dataset отсутствует целевая колонка: {target_column}")
+    if target_column not in test_df.columns:
+        raise ValueError(f"В external test dataset отсутствует целевая колонка: {target_column}")
+    missing = [column for column in feature_columns if column not in test_df.columns]
+    if missing:
+        raise ValueError(f"В external test dataset отсутствуют признаки: {', '.join(missing)}")
+
+    train_classes = set(train_df[target_column].dropna().astype(str))
+    test_classes = set(test_df[target_column].dropna().astype(str))
+    unknown_classes = sorted(test_classes - train_classes)
+    if unknown_classes:
+        warnings.append(
+            "В external test dataset есть классы, которых не было в train dataset: "
+            + ", ".join(unknown_classes)
+            + ". Модель не сможет корректно предсказать такие классы, а метрики покажут ограничение текущего обучения."
+        )
+    return warnings
+
+
 def safe_train_test_split(
     X: pd.DataFrame,
     y: pd.Series,

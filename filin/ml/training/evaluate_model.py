@@ -37,11 +37,19 @@ def evaluate_model(model_path: Path, dataset_path: Path, metadata_path: Path, re
     y_pred = model.predict(X)
     metrics = calculate_metrics(y, y_pred)
     warning = None
+    same_dataset = False
+    metadata_dataset_path = metadata.get("dataset_path")
     try:
-        if Path(metadata.get("dataset_path", "")).resolve() == dataset_path.resolve():
+        same_dataset = Path(metadata.get("dataset_path", "")).resolve() == dataset_path.resolve()
+        if same_dataset:
             warning = (
                 "Оценка выполнена на том же датасете, который мог использоваться при обучении. "
                 "Такой результат не является независимой проверкой качества."
+            )
+        else:
+            warning = (
+                "Оценка выполнена на отдельном датасете. Это более строгая проверка по сравнению с оценкой на том же наборе, "
+                "но применимость результатов зависит от способа формирования датасета."
             )
     except OSError:
         warning = None
@@ -53,6 +61,8 @@ def evaluate_model(model_path: Path, dataset_path: Path, metadata_path: Path, re
         model_name=str(metadata.get("model_name", "unknown")),
         metrics=metrics,
         warning=warning,
+        metadata_dataset_path=str(metadata_dataset_path) if metadata_dataset_path else None,
+        same_dataset=same_dataset,
         limitations=metadata.get("limitations", []),
     )
     return {"model_name": metadata.get("model_name"), "metrics": metrics, "report_path": str(report_path), "warning": warning}

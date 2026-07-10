@@ -17,7 +17,7 @@ from sklearn.metrics import (
 
 from model_registry import MODEL_PRIORITY, build_baseline_models
 from report_writer import write_training_report
-from split_dataset import prepare_xy, safe_train_test_split
+from split_dataset import prepare_xy, safe_train_test_split, validate_external_dataset_compatibility
 
 
 LIMITATIONS = [
@@ -68,6 +68,7 @@ def select_best_model(metrics_by_model: dict[str, dict[str, Any]]) -> str:
 
 def train_baselines(
     dataset_path: Path,
+    external_test_dataset_path: Path | None,
     target: str,
     output_dir: Path,
     report_path: Path,
@@ -83,13 +84,29 @@ def train_baselines(
     if low_count:
         split_warnings.append(f"Есть классы с числом объектов меньше min_class_count={min_class_count}: {low_count}")
 
-    X_train, X_test, y_train, y_test, split_method, warnings = safe_train_test_split(
-        X,
-        y,
-        test_size=test_size,
-        random_state=random_state,
-    )
-    split_warnings.extend(warnings)
+    compatibility_info: dict[str, Any] = {"all_features_present": True, "extra_test_columns": 0}
+    test_class_distribution: dict[str, int] | None = None
+    if external_test_dataset_path:
+        test_df = load_dataset(external_test_dataset_path)
+        compatibility_warnings = validate_external_dataset_compatibility(df, test_df, feature_columns, target)
+        split_warnings.extend(compatibility_warnings)
+        extra_columns = sorted(set(test_df.columns) - set(feature_columns) - {target})
+        compatibility_info = {"all_features_present": True, "extra_test_columns": len(extra_columns)}
+        X_train = X
+        y_train = y
+        X_test = test_df[feature_columns]
+        y_test = test_df[target]
+        split_method = "external_test_dataset"
+        test_class_distribution = {str(label): int(count) for label, count in y_test.value_counts().sort_index().items()}
+    else:
+        X_train, X_test, y_train, y_test, split_method, warnings = safe_train_test_split(
+            X,
+            y,
+            test_size=test_size,
+            random_state=random_state,
+        )
+        split_warnings.extend(warnings)
+        test_class_distribution = {str(label): int(count) for label, count in y_test.value_counts().sort_index().items()}
 
     metrics_by_model: dict[str, dict[str, Any]] = {}
     trained_models: dict[str, Any] = {}
@@ -112,6 +129,7 @@ def train_baselines(
 
     metadata = {
         "dataset_path": str(dataset_path),
+        "external_test_dataset_path": str(external_test_dataset_path) if external_test_dataset_path else None,
         "target": target,
         "feature_columns": feature_columns,
         "excluded_columns": excluded_columns,
@@ -123,9 +141,12 @@ def train_baselines(
     metadata_path.write_text(json.dumps(metadata, ensure_ascii=False, indent=2), encoding="utf-8")
 
     split_info = {
-        "test_size": test_size,
+        "evaluation_mode": "external test dataset" if external_test_dataset_path else "single dataset split",
+        "test_size": None if external_test_dataset_path else test_size,
         "random_state": random_state,
         "method": split_method,
+        "train_source_rows": int(len(df)),
+        "external_test_rows": int(len(X_test)) if external_test_dataset_path else None,
         "train_rows": int(len(X_train)),
         "test_rows": int(len(X_test)),
         "warnings": split_warnings,
@@ -133,11 +154,14 @@ def train_baselines(
     write_training_report(
         path=report_path,
         dataset_path=str(dataset_path),
+        external_test_dataset_path=str(external_test_dataset_path) if external_test_dataset_path else None,
         target=target,
         feature_columns=feature_columns,
         excluded_columns=excluded_columns,
         class_distribution=class_distribution,
+        test_class_distribution=test_class_distribution,
         split_info=split_info,
+        compatibility_info=compatibility_info,
         metrics_by_model=metrics_by_model,
         model_errors=model_errors,
         best_model=best_model_name,
@@ -156,6 +180,7 @@ def train_baselines(
 def main() -> None:
     parser = argparse.ArgumentParser(description="Обучение baseline-моделей Филин на лабораторном датасете признаков.")
     parser.add_argument("--dataset", required=True, help="Путь к CSV-датасету признаков.")
+    parser.add_argument("--external-test-dataset", default=None, help="Путь к отдельному CSV для external test.")
     parser.add_argument("--target", default="label", help="Целевая колонка.")
     parser.add_argument("--output-dir", required=True, help="Папка для сохранения модели и metadata.")
     parser.add_argument("--report", required=True, help="Путь к Markdown-отчёту.")
@@ -166,6 +191,7 @@ def main() -> None:
 
     result = train_baselines(
         dataset_path=Path(args.dataset),
+        external_test_dataset_path=Path(args.external_test_dataset) if args.external_test_dataset else None,
         target=args.target,
         output_dir=Path(args.output_dir),
         report_path=Path(args.report),
