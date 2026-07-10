@@ -78,7 +78,7 @@ def write_report(run_dir: Path) -> Path:
     return report_path
 
 
-def run_pipeline(args: argparse.Namespace) -> dict[str, Path]:
+def run_pipeline(args: argparse.Namespace, campaign_metadata: dict[str, object] | None = None, scenario_variants: dict[int, dict[str, object]] | None = None, skip_legacy_dataset: bool = False) -> dict[str, Path]:
     if args.mock == args.docker:
         raise ValueError("Нужно указать ровно один режим: --mock или --docker.")
     if args.time_scale <= 0 or args.time_scale > 1:
@@ -96,11 +96,20 @@ def run_pipeline(args: argparse.Namespace) -> dict[str, Path]:
 
     manifest = create_empty_manifest(True, args.schedule_mode, args.gap_seconds, args.repeat)
     manifest.update({"execution_mode": "docker" if args.docker else "mock", "random_seed": args.random_seed, "time_scale": args.time_scale})
+    if campaign_metadata:
+        manifest.update(campaign_metadata)
     save_manifest(manifest_path, manifest)
     paths = discover_scenario_paths(None, Path(args.scenarios), args.schedule_mode, args.repeat)
     success_count, error_count = run_scenarios(paths, manifest_path, parse_allowed_targets(None), True, True, parse_base_time(args.base_time), args.schedule_mode, args.gap_seconds, args.repeat)
     if error_count:
         raise RuntimeError(f"Планирование сценариев завершилось с ошибками: {error_count}")
+    if scenario_variants:
+        from scenario_runner import load_manifest
+        manifest = load_manifest(manifest_path)
+        for scenario in manifest.get("scenarios", []):
+            variant = scenario_variants.get(int(scenario["run_sequence"]), {})
+            scenario.update(variant)
+        save_manifest(manifest_path, manifest)
     completed, failed, skipped = execute_manifest(manifest_path, True, False, args.max_runtime_seconds, args.mock, compose_file if args.docker else None, project_dir if args.docker else None, args.time_scale, args.random_seed)
     if failed:
         raise RuntimeError(f"Выполнение сценариев завершилось с ошибками: {failed}")
@@ -114,11 +123,15 @@ def run_pipeline(args: argparse.Namespace) -> dict[str, Path]:
     normalize_events(run_dir / "execution_events.jsonl", run_dir / "traffic_events.jsonl", normalized_path)
     report_path = write_report(run_dir)
     windows_path, flows_path = dataset_output_paths(run_dir)
-    build_windows_dataset(manifest_path, normalized_path, windows_path, args.window_seconds)
-    build_flows_dataset(manifest_path, normalized_path, flows_path)
+    if not skip_legacy_dataset:
+        build_windows_dataset(manifest_path, normalized_path, windows_path, args.window_seconds)
+        build_flows_dataset(manifest_path, normalized_path, flows_path)
     if args.docker and args.stop_services_after_run:
         run_docker(docker_command(compose_file, "down"), project_dir, "Не удалось остановить Docker-стенд")
-    return {"manifest": manifest_path, "traffic_events": run_dir / "traffic_events.jsonl", "normalized_events": normalized_path, "dataset_report": report_path, "windows_dataset": windows_path, "flows_dataset": flows_path}
+    result = {"manifest": manifest_path, "traffic_events": run_dir / "traffic_events.jsonl", "normalized_events": normalized_path, "dataset_report": report_path}
+    if not skip_legacy_dataset:
+        result.update({"windows_dataset": windows_path, "flows_dataset": flows_path})
+    return result
 
 
 def main() -> None:

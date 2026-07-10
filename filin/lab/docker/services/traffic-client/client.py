@@ -92,6 +92,9 @@ def validate_args(args: argparse.Namespace) -> None:
 
 
 def emit(event: dict[str, Any]) -> None:
+    # Время фиксируется непосредственно перед выдачей события, чтобы журнал
+    # отражал фактическую временную структуру сценария.
+    event["timestamp"] = now()
     print(json.dumps(event, ensure_ascii=False), flush=True)
 
 

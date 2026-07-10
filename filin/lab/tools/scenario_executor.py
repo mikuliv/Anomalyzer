@@ -10,6 +10,7 @@ from typing import Any
 
 ALLOWED_TARGETS = {"target-web", "target-api", "control-api", "internal-dns", "target-ssh-sim"}
 REQUIRED_TRAFFIC_FIELDS = {"timestamp", "run_id", "run_sequence", "scenario_id", "target_host", "event_type", "execution_mode", "synthetic"}
+CAMPAIGN_FIELDS = ("campaign_id", "campaign_version", "campaign_role", "campaign_run_index", "campaign_seed", "execution_id", "scenario_variant_id", "scenario_parameter_hash")
 
 
 def utc_now() -> str:
@@ -23,12 +24,18 @@ def append_event(path: Path, event: dict[str, Any]) -> None:
 
 
 def execution_event(manifest: dict[str, Any], scenario: dict[str, Any], action: str, status: str, details: dict[str, Any]) -> dict[str, Any]:
-    return {
+    event = {
         "timestamp": utc_now(), "run_id": manifest.get("run_id"), "run_sequence": scenario.get("run_sequence"),
         "scenario_id": scenario.get("scenario_id"), "type": scenario.get("type"), "label": scenario.get("label"),
         "source_role": scenario.get("source_role"), "target_role": scenario.get("target_role"),
         "action": action, "status": status, "details": details,
     }
+    for field in CAMPAIGN_FIELDS:
+        if field in scenario:
+            event[field] = scenario[field]
+        elif field in manifest:
+            event[field] = manifest[field]
+    return event
 
 
 def mock_event(manifest: dict[str, Any], scenario: dict[str, Any], index: int) -> dict[str, Any]:
@@ -101,14 +108,29 @@ def execute_scenario(manifest: dict[str, Any], scenario: dict[str, Any], events_
         else:
             if compose_file is None or compose_project_dir is None:
                 raise ValueError("Для Docker-режима нужны путь к compose-файлу и рабочая папка compose.")
-            # Короткий v0.2-прогон ограничен 12 действиями на сценарий: лимиты
-            # интенсивности сохраняются, а time-scale остаётся практичным для проверки стенда.
-            max_events = min(12, max(1, int(effective_duration * 3)))
+            # Для кампании обычные действия короткие; временная структура сохраняется
+            # отдельно для low_rate_dos и beacon_simulation ниже.
+            max_events = min(4, max(1, int(effective_duration * 3)))
             max_rate = 2.0 if scenario.get("label") in {"auth_failures", "low_rate_dos"} else 3.0
+            variant = scenario.get("scenario_parameters") or {}
+            if scenario.get("label") == "low_rate_dos":
+                # Запас в одну секунду компенсирует дискретность UTC-журнала.
+                effective_duration = max(7, int(variant.get("minimum_actual_duration_seconds", 6)))
+                max_events = int(variant.get("request_count", 10))
+                max_rate = min(5.0, float(variant.get("max_rate", 2.0)))
+            elif scenario.get("label") == "beacon_simulation":
+                effective_duration = max(8, int(variant.get("minimum_actual_duration_seconds", 8)))
+                max_events = int(variant.get("heartbeat_count", 8))
+                max_rate = min(5.0, 1000.0 / max(500.0, float(variant.get("base_interval_ms", 1000))))
             traffic_events, notes, return_code = run_docker_scenario(manifest, scenario, compose_file, compose_project_dir, effective_duration, max_events, max_rate, random_seed + int(scenario["run_sequence"]))
             if return_code:
                 raise RuntimeError(f"traffic-client завершился с кодом {return_code}. {notes}".strip())
         for event in traffic_events:
+            for field in CAMPAIGN_FIELDS:
+                if field in scenario:
+                    event[field] = scenario[field]
+                elif field in manifest:
+                    event[field] = manifest[field]
             append_event(traffic_path, event)
         details = {**start_details, "traffic_events": len(traffic_events), "requests_sent": len(traffic_events), "errors": sum(1 for event in traffic_events if event.get("status") in {"error", "closed", "timeout"}), "stderr": notes}
         append_event(events_path, execution_event(manifest, scenario, "scenario_finished", "completed", details))
