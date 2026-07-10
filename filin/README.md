@@ -120,3 +120,11 @@ python filin/ml/features/validators.py --csv filin/datasets/examples/flows_v0_1.
 - Провести корректный train/test split, обучение и сравнение моделей.
 - Развить incident engine и проверку Sigma-кандидатов.
 - Подготовить демонстрационный сценарий для ВКР/НИР.
+
+## Филин v0.2: реальный Docker traffic collection
+
+Для реального прогона используйте `--docker`: действия выполняются только внутри `filin_lab_net` по фиксированному allowlist. `traffic-client` формирует наблюдения клиента, а не данные независимого сетевого сенсора. `target-ssh-sim` создаёт безопасное TCP-подключение для учебного административного сценария и не является SSH-сервером.
+
+```powershell
+python filin/lab/tools/run_lab_pipeline.py --run-dir filin/lab/output/runs/run_docker_001 --base-time 2026-07-10T15:00:00Z --gap-seconds 30 --repeat 1 --docker --window-seconds 60 --time-scale 0.05 --random-seed 101 --start-services
+```

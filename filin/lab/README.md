@@ -136,3 +136,11 @@ python filin/ml/training/run_external_experiment.py --train-run run_001 --test-r
 Mock-режим формирует синтетические лабораторные события без сетевой активности. Он нужен для проверки pipeline. Для обучения итоговых моделей требуется реальный сбор трафика в Docker/VMware-стенде.
 
 Docker-стенд v0.1 является прототипом и не заменяет отдельный стенд с виртуальными машинами, выделенными сенсорами и расширенной фиксацией PCAP.
+
+## Филин v0.2: реальный Docker traffic collection
+
+Режим `docker` выполняет сценарии в `traffic-client` и сохраняет реальные результаты HTTP, DNS-разрешений и TCP connect-проверок в `traffic_events.jsonl`. Внешние адреса, произвольные URL и неразрешённые цели блокируются allowlist. `execution_events.jsonl` остаётся служебным журналом; `normalized_events.jsonl` сохраняет `execution_mode`, `synthetic` и `observation_source` только как metadata.
+
+```powershell
+python filin/lab/tools/run_lab_pipeline.py --run-dir filin/lab/output/runs/run_docker_001 --base-time 2026-07-10T15:00:00Z --gap-seconds 30 --repeat 1 --docker --window-seconds 60 --time-scale 0.05 --random-seed 101
+```

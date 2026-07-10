@@ -10,7 +10,8 @@
 | Лабораторный manifest | готово | Manifest v0.3 фиксирует план, разметку и статусы выполнения, поддержаны отдельные run-директории. |
 | Natural schedule | готово | Attack-сценарии вплетаются в benign-фон. |
 | Mock execute | готово | Формирует синтетические лабораторные события без сетевой активности. |
-| Docker services | прототип | Есть target-web, target-api, control-api, traffic-client и инфраструктурные сервисы. |
+| Docker services | прототип | Есть target-web, target-api, control-api, target-ssh-sim, traffic-client и инфраструктурные сервисы. |
+| Docker execute | готово | `traffic-client` выполняет разрешённые HTTP, DNS-like и TCP-действия внутри изолированной сети; события являются client observations. |
 | Traffic events | готово | Формируется `traffic_events.jsonl` с учебными событиями активности. |
 | Normalized events | готово | `normalize_events.py` объединяет execution и traffic events. |
 | Dataset report | готово | Отчет учитывает manifest, execution events, traffic events и normalized events, поддержан `--run-dir`. |

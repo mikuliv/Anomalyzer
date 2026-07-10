@@ -107,4 +107,17 @@ curl http://127.0.0.1:18081/health
 
 ## Ограничения
 
-Docker-стенд v0.1 предназначен для проверки pipeline и сбора учебных событий. Для итогового обучения моделей требуется реальный сбор трафика в Docker/VMware-стенде, проверка качества датасета и контроль отсутствия чувствительных данных.
+Docker-стенд v0.2 предназначен для безопасного сбора учебных client observations. Для итогового обучения моделей требуется независимый сбор трафика в Docker/VMware-стенде, проверка качества датасета и контроль отсутствия чувствительных данных.
+
+## Филин v0.2: реальный Docker traffic collection
+
+`traffic-client` подключён только к внутренней `filin_lab_net`, не публикует порты, не использует Docker socket, host network или privileged mode. Разрешены только `target-web`, `target-api`, `control-api`, `target-ssh-sim` и внутренние DNS-имена. `target-ssh-sim:2222` выдаёт тестовый banner и сразу закрывает соединение: это не SSH-сервер, shell и аутентификация отсутствуют.
+
+Полный запуск и сбор диагностических логов:
+
+```powershell
+cd H:\Anomalyzer
+python filin/lab/tools/run_lab_pipeline.py --run-dir filin/lab/output/runs/run_docker_001 --base-time 2026-07-10T15:00:00Z --gap-seconds 30 --repeat 1 --docker --window-seconds 60 --time-scale 0.05 --random-seed 101 --start-services
+```
+
+Логи сервисов сохраняются в `<run-dir>/service_logs/` и не добавляются в Git.
