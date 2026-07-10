@@ -62,6 +62,18 @@ python filin/ml/training/evaluate_model.py --model filin/ml/artifacts/baseline_v
 
 Если оценка выполняется на том же датасете, который использовался при обучении, отчёт содержит предупреждение. Такой результат не является независимой проверкой качества.
 
+## Оценка по разным laboratory runs
+
+Для более честной проверки модель следует обучать на одном прогоне стенда, а оценивать на другом. Это снижает риск того, что модель выучит особенности одного конкретного `run_id` или расписания сценариев.
+
+```powershell
+python filin/ml/training/train_baselines.py --dataset filin/lab/output/datasets/windows_v0_1_run_001.csv --external-test-dataset filin/lab/output/datasets/windows_v0_1_run_002.csv --target label --output-dir filin/ml/artifacts/baseline_v0_1_external --report filin/ml/reports/baseline_v0_1_external.md
+```
+
+В этом режиме `--dataset` используется только для train, а `--external-test-dataset` только для test. Feature columns определяются по train dataset. Если в external test dataset не хватает признаков, обучение завершается понятной ошибкой. Лишние колонки test игнорируются.
+
+Оценка на отдельном laboratory run является более строгой, чем случайный split внутри одного CSV, но всё ещё не подтверждает качество модели на реальном сетевом трафике, если оба набора сформированы в mock-режиме.
+
 ## Метрики
 
 Accuracy не является основной метрикой для задач обнаружения инцидентов. Основное внимание уделяется macro/weighted F1, recall по attack-классам и confusion matrix.

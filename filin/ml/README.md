@@ -96,6 +96,16 @@ python filin/ml/training/evaluate_model.py --model filin/ml/artifacts/baseline_v
 
 Артефакты `filin/ml/artifacts/` и отчёты `filin/ml/reports/` являются локальными результатами прогонов и не хранятся в Git.
 
+## Оценка по разным laboratory runs
+
+Для более честной проверки модель следует обучать на одном прогоне стенда, а оценивать на другом. Это снижает риск того, что модель выучит особенности одного конкретного `run_id` или расписания сценариев.
+
+```powershell
+python filin/ml/training/train_baselines.py --dataset filin/lab/output/datasets/windows_v0_1_run_001.csv --external-test-dataset filin/lab/output/datasets/windows_v0_1_run_002.csv --target label --output-dir filin/ml/artifacts/baseline_v0_1_external --report filin/ml/reports/baseline_v0_1_external.md
+```
+
+Оценка на отдельном laboratory run является более строгой, чем случайный split внутри одного CSV. Если оба набора сформированы в mock-режиме, такая проверка всё ещё не подтверждает качество модели на реальном сетевом трафике.
+
 ## Оценка качества
 
 Accuracy не является основной метрикой для задач обнаружения инцидентов. Важны precision, recall, F1, confusion matrix, ROC-AUC/PR-AUC и анализ ошибок по классам.

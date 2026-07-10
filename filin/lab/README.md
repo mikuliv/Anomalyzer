@@ -106,6 +106,37 @@ python filin/ml/features/build_windows_dataset.py --manifest filin/lab/output/sc
 python filin/ml/features/build_flows_dataset.py --manifest filin/lab/output/scenario_manifest.yaml --events filin/lab/output/normalized_events.jsonl --output filin/lab/output/datasets/flows_v0_1.csv
 ```
 
+## Оценка по разным laboratory runs
+
+Для более честной проверки baseline-моделей нужно обучать модель на одном прогоне стенда, а оценивать на другом. Это снижает риск того, что модель выучит особенности одного конкретного `run_id` или расписания сценариев.
+
+Пример workflow:
+
+```powershell
+# Прогон 1
+python filin/lab/tools/scenario_runner.py --scenarios filin/lab/scenarios --manifest filin/lab/output/run_001/scenario_manifest.yaml --dry-run --reset-manifest --base-time 2026-07-09T13:00:00Z --schedule-mode natural --gap-seconds 30 --repeat 1
+
+python filin/lab/tools/scenario_runner.py --manifest filin/lab/output/run_001/scenario_manifest.yaml --execute --allow-dry-run-manifest --mock --max-runtime-seconds 300
+
+python filin/lab/tools/normalize_events.py --execution-events filin/lab/output/run_001/execution_events.jsonl --traffic-events filin/lab/output/run_001/traffic_events.jsonl --output filin/lab/output/run_001/normalized_events.jsonl
+
+python filin/ml/features/build_windows_dataset.py --manifest filin/lab/output/run_001/scenario_manifest.yaml --events filin/lab/output/run_001/normalized_events.jsonl --output filin/lab/output/datasets/windows_v0_1_run_001.csv --window-seconds 60
+
+# Прогон 2
+python filin/lab/tools/scenario_runner.py --scenarios filin/lab/scenarios --manifest filin/lab/output/run_002/scenario_manifest.yaml --dry-run --reset-manifest --base-time 2026-07-10T13:00:00Z --schedule-mode natural --gap-seconds 45 --repeat 1
+
+python filin/lab/tools/scenario_runner.py --manifest filin/lab/output/run_002/scenario_manifest.yaml --execute --allow-dry-run-manifest --mock --max-runtime-seconds 300
+
+python filin/lab/tools/normalize_events.py --execution-events filin/lab/output/run_002/execution_events.jsonl --traffic-events filin/lab/output/run_002/traffic_events.jsonl --output filin/lab/output/run_002/normalized_events.jsonl
+
+python filin/ml/features/build_windows_dataset.py --manifest filin/lab/output/run_002/scenario_manifest.yaml --events filin/lab/output/run_002/normalized_events.jsonl --output filin/lab/output/datasets/windows_v0_1_run_002.csv --window-seconds 60
+
+# Обучение на run_001 и оценка на run_002
+python filin/ml/training/train_baselines.py --dataset filin/lab/output/datasets/windows_v0_1_run_001.csv --external-test-dataset filin/lab/output/datasets/windows_v0_1_run_002.csv --target label --output-dir filin/ml/artifacts/baseline_v0_1_external --report filin/ml/reports/baseline_v0_1_external.md
+```
+
+Если инструменты запуска стенда в текущей версии используются без отдельных output-dir, разные CSV можно подготовить как ручной шаг из разных сохранённых прогонов. Артефакты в `filin/lab/output/` не коммитятся.
+
 ## Ограничения v0.1
 
 Mock-режим формирует синтетические лабораторные события без сетевой активности. Он нужен для проверки pipeline. Для обучения итоговых моделей требуется реальный сбор трафика в Docker/VMware-стенде.

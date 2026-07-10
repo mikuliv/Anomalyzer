@@ -15,8 +15,8 @@
 | Normalized events | готово | `normalize_events.py` объединяет execution и traffic events. |
 | Dataset report | готово | Отчет учитывает manifest, execution events, traffic events и normalized events. |
 | Feature extraction | прототип | Есть feature catalog, schema, validators, windows и flows builders, учебные examples CSV и CLI-проверка примеров. |
-| Model training | прототип | Есть baseline pipeline с Dummy, LogisticRegression, RandomForest и HistGradientBoosting. |
-| Model evaluation | прототип | Есть оценка сохранённой модели и Markdown-отчёты с основными метриками. |
+| Model training | прототип | Есть baseline pipeline с Dummy, LogisticRegression, RandomForest и HistGradientBoosting, поддержан external test dataset. |
+| Model evaluation | прототип | Есть оценка сохранённой модели, Markdown-отчёты и предупреждения о совпадении train/evaluation dataset. |
 | ONNX export | планируется | Экспорт будет добавлен после выбора устойчивой модели. |
 | Dashboard/SIEM export | планируется | Требуются web-ui, Kibana/SIEM сценарии и проверка Sigma-кандидатов. |
 | Zeek collector | частично | Есть заготовка коллектора, требуется реальный разбор логов. |
