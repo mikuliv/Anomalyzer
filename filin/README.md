@@ -128,3 +128,7 @@ python filin/ml/features/validators.py --csv filin/datasets/examples/flows_v0_1.
 ```powershell
 python filin/lab/tools/run_lab_pipeline.py --run-dir filin/lab/output/runs/run_docker_001 --base-time 2026-07-10T15:00:00Z --gap-seconds 30 --repeat 1 --docker --window-seconds 60 --time-scale 0.05 --random-seed 101 --start-services
 ```
+
+## Филин v0.2.1 — Docker-to-Docker evaluation
+
+`filin/ml/analysis/` содержит provenance-проверку, анализ PSI и сводный отчёт по нескольким runs. Metadata происхождения (`execution_mode`, `synthetic`, `observation_source`) остаётся исключённой из model features.

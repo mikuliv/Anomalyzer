@@ -12,6 +12,7 @@
 | Mock execute | готово | Формирует синтетические лабораторные события без сетевой активности. |
 | Docker services | прототип | Есть target-web, target-api, control-api, target-ssh-sim, traffic-client и инфраструктурные сервисы. |
 | Docker execute | готово | `traffic-client` выполняет разрешённые HTTP, DNS-like и TCP-действия внутри изолированной сети; события являются client observations. |
+| Docker-to-Docker evaluation | готово | Есть provenance-проверка, SHA-256 datasets, multirun baseline и анализ PSI feature drift. |
 | Traffic events | готово | Формируется `traffic_events.jsonl` с учебными событиями активности. |
 | Normalized events | готово | `normalize_events.py` объединяет execution и traffic events. |
 | Dataset report | готово | Отчет учитывает manifest, execution events, traffic events и normalized events, поддержан `--run-dir`. |
