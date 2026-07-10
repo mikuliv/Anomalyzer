@@ -64,7 +64,7 @@ def write_jsonl(path: Path, events: Iterable[dict[str, Any]]) -> None:
 
 
 def base_normalized_event(event: dict[str, Any], event_source: str, event_type: str) -> dict[str, Any]:
-    return {
+    normalized = {
         "event_id": str(uuid4()),
         "timestamp": event.get("timestamp"),
         "run_id": event.get("run_id"),
@@ -80,6 +80,9 @@ def base_normalized_event(event: dict[str, Any], event_source: str, event_type: 
         "event_source": event_source,
         "event_type": event_type,
     }
+    for field in ("campaign_id", "campaign_version", "campaign_role", "campaign_run_index", "campaign_seed", "execution_id", "scenario_variant_id", "scenario_parameter_hash"):
+        normalized[field] = event.get(field)
+    return normalized
 
 
 def normalize_execution_event(event: dict[str, Any]) -> dict[str, Any]:

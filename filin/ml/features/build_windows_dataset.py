@@ -15,7 +15,7 @@ from schema import get_feature_profile, get_model_feature_columns
 from validators import validate_dataset
 
 
-WINDOW_METADATA_COLUMNS = ["run_id", "run_sequence", "scenario_id", "scenario_execution_key", "window_index", "window_start", "window_end", "window_duration_seconds", "is_partial_window", "label", "label_type", "execution_mode", "synthetic", "observation_source", "feature_profile", "interval_source", "planned_scenario_duration_seconds", "actual_scenario_duration_seconds", "window_event_count", "window_has_events"]
+WINDOW_METADATA_COLUMNS = ["run_id", "run_sequence", "scenario_id", "scenario_execution_key", "window_index", "window_start", "window_end", "window_duration_seconds", "is_partial_window", "label", "label_type", "execution_mode", "synthetic", "observation_source", "feature_profile", "interval_source", "planned_scenario_duration_seconds", "actual_scenario_duration_seconds", "window_event_count", "window_has_events", "campaign_id", "campaign_version", "campaign_role", "campaign_run_index", "campaign_seed", "execution_id", "scenario_variant_id", "scenario_parameter_hash"]
 FEATURE_COLUMNS = [
     "duration_seconds",
     "protocol_id",
@@ -295,6 +295,8 @@ def build_scenario_execution_windows(manifest: dict[str, Any], events: list[dict
             if window_events or empty_window_policy == "keep":
                 duration = (end - current).total_seconds()
                 row = {"run_id": manifest.get("run_id", ""), "run_sequence": sequence, "scenario_id": scenario.get("scenario_id", ""), "scenario_execution_key": key, "window_index": index, "window_start": format_time(current), "window_end": format_time(end), "window_duration_seconds": duration, "is_partial_window": duration < window_seconds, "label": scenario.get("label", "benign") if scenario.get("type") == "attack" else "benign", "label_type": scenario.get("type"), "execution_mode": manifest.get("execution_mode"), "synthetic": False, "observation_source": "client", "feature_profile": feature_profile, "interval_source": "manifest_actual", "planned_scenario_duration_seconds": scenario.get("duration_seconds"), "actual_scenario_duration_seconds": (finish-start).total_seconds(), "window_event_count": len(window_events), "window_has_events": bool(window_events)}
+                for campaign_field in ("campaign_id", "campaign_version", "campaign_role", "campaign_run_index", "campaign_seed", "execution_id", "scenario_variant_id", "scenario_parameter_hash"):
+                    row[campaign_field] = scenario.get(campaign_field, manifest.get(campaign_field))
                 row.update(aggregate_client_window(window_events, duration))
                 rows.append(row)
             current, index = end, index + 1

@@ -28,6 +28,8 @@ METADATA_COLUMNS = [
     "interval_source",
     "planned_scenario_duration_seconds",
     "actual_scenario_duration_seconds",
+    "campaign_id", "campaign_version", "campaign_role", "campaign_run_index", "campaign_seed",
+    "execution_id", "scenario_variant_id", "scenario_parameter_hash",
 ]
 
 CLIENT_CORE_V0_2 = [
@@ -66,6 +68,8 @@ FORBIDDEN_FEATURE_COLUMNS = [
     "execution_mode",
     "synthetic",
     "observation_source",
+    "campaign_id", "campaign_version", "campaign_role", "campaign_run_index", "campaign_seed",
+    "execution_id", "scenario_variant_id", "scenario_parameter_hash",
 ]
 
 

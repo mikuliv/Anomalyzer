@@ -88,8 +88,7 @@ def append_scenario_window(
         save_manifest(manifest_path, manifest)
         return manifest
 
-    manifest["scenarios"].append(
-        {
+    entry = {
             "run_sequence": run_sequence,
             "scenario_id": scenario_id,
             "type": scenario["type"],
@@ -104,6 +103,10 @@ def append_scenario_window(
             "dry_run": dry_run,
             "notes": scenario.get("notes", []),
         }
-    )
+    # Метаданные кампании описывают происхождение выполнения и не являются признаками модели.
+    for field in ("campaign_id", "campaign_version", "campaign_role", "campaign_run_index", "campaign_seed"):
+        if field in manifest:
+            entry[field] = manifest[field]
+    manifest["scenarios"].append(entry)
     save_manifest(manifest_path, manifest)
     return manifest
