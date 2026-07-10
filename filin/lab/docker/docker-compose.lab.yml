@@ -8,8 +8,11 @@ services:
       - ../output/target-web:/var/log/nginx
     networks:
       - filin_lab_net
+      - filin_mgmt_net
     expose:
       - "80"
+    security_opt:
+      - no-new-privileges:true
 
   target-api:
     build:
@@ -21,6 +24,8 @@ services:
       - filin_mgmt_net
     expose:
       - "8080"
+    security_opt:
+      - no-new-privileges:true
 
   control-api:
     build:
@@ -29,6 +34,20 @@ services:
       - filin_lab_net
     expose:
       - "8090"
+    security_opt:
+      - no-new-privileges:true
+
+  target-ssh-sim:
+    build:
+      context: ./services/target-ssh-sim
+    networks:
+      - filin_lab_net
+    expose:
+      - "2222"
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
 
   traffic-client:
     image: filin-traffic-client:0.1
@@ -43,6 +62,11 @@ services:
       - target-web
       - target-api
       - control-api
+      - target-ssh-sim
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
 
   benign-client:
     image: filin-traffic-client:0.1
@@ -54,6 +78,7 @@ services:
     depends_on:
       - target-web
       - target-api
+    profiles: ["manual"]
 
   attacker-simulator:
     image: filin-traffic-client:0.1
@@ -67,6 +92,7 @@ services:
       - target-web
       - target-api
       - control-api
+    profiles: ["manual"]
 
   scenario-runner:
     image: filin-traffic-client:0.1
@@ -80,6 +106,7 @@ services:
     depends_on:
       - target-web
       - target-api
+    profiles: ["manual"]
 
   zeek:
     image: zeek/zeek:latest
@@ -138,6 +165,7 @@ services:
 networks:
   filin_lab_net:
     name: ${FILIN_LAB_NET:-filin_lab_net}
+    internal: true
   filin_monitor_net:
     name: ${FILIN_MONITOR_NET:-filin_monitor_net}
   filin_mgmt_net:
