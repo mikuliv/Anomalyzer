@@ -36,3 +36,5 @@ Docker-режим v0.2 выполняет реальные безопасные 
 Филин v0.2.4 — baseline evaluation на независимой train/test кампании.
 
 Следующий этап определяется результатом baseline evaluation и не реализуется в текущей версии.
+
+Филин v0.3.1 — baseline evaluation профиля network_sensor_v0_3.

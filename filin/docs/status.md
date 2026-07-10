@@ -29,3 +29,4 @@
 - Независимые train/test executions: готово.
 - Готовность к ML: подтверждена для кампании.
 - Baseline evaluation v0.2.4: выполнена на независимых train/test runs.
+- Независимый сетевой сенсор Zeek v0.3: capture, Zeek processing и sensor campaign завершены.
