@@ -67,6 +67,19 @@ python filin/ml/training/evaluate_model.py --model filin/ml/artifacts/baseline_v
 Для более честной проверки модель следует обучать на одном прогоне стенда, а оценивать на другом. Это снижает риск того, что модель выучит особенности одного конкретного `run_id` или расписания сценариев.
 
 ```powershell
+# Run 001
+python filin/lab/tools/run_lab_pipeline.py --run-dir filin/lab/output/runs/run_001 --base-time 2026-07-09T13:00:00Z --gap-seconds 30 --repeat 1 --mock --window-seconds 60
+
+# Run 002
+python filin/lab/tools/run_lab_pipeline.py --run-dir filin/lab/output/runs/run_002 --base-time 2026-07-10T13:00:00Z --gap-seconds 45 --repeat 1 --mock --window-seconds 60
+
+# Обучение на run_001 и external-test на run_002
+python filin/ml/training/run_external_experiment.py --train-run run_001 --test-run run_002 --target label
+```
+
+Прямой запуск:
+
+```powershell
 python filin/ml/training/train_baselines.py --dataset filin/lab/output/datasets/windows_v0_1_run_001.csv --external-test-dataset filin/lab/output/datasets/windows_v0_1_run_002.csv --target label --output-dir filin/ml/artifacts/baseline_v0_1_external --report filin/ml/reports/baseline_v0_1_external.md
 ```
 
