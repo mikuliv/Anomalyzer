@@ -71,3 +71,6 @@ python filin/ml/features/validators.py --csv filin/datasets/examples/flows_v0_1.
 ## Ограничения
 
 Датасеты v0.1 предназначены для проверки pipeline. Для обучения итоговых моделей требуется реальный сбор трафика в Docker/VMware-стенде, контроль качества разметки и проверка отсутствия чувствительных данных.
+# Campaign datasets v0.2.3
+
+Campaign metadata является metadata и исключается из model features.

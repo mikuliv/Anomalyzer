@@ -15,3 +15,6 @@ python filin/ml/analysis/run_provenance.py --run-dir filin/lab/output/runs/run_d
 
 python filin/ml/analysis/feature_drift.py --reference filin/lab/output/datasets/windows_v0_1_run_docker_001.csv --comparison filin/lab/output/datasets/windows_v0_1_run_docker_002.csv --target label --by-class --report filin/ml/reports/drift_docker_001_to_002.md --json-report filin/ml/reports/drift_docker_001_to_002.json
 ```
+# Аудиты кампании v0.2.3
+
+Аудиты проверяют происхождение, независимость executions, разделение train/test и готовность к ML.

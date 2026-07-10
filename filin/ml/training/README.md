@@ -110,3 +110,6 @@ python filin/ml/training/run_external_experiment.py --train-run run_001 --test-r
 ## Филин v0.2.1 — Docker-to-Docker evaluation
 
 `train_baselines.py` поддерживает повторяемый параметр `--additional-train-dataset`. Внешний test dataset запрещено включать в train; для всех datasets сохраняются SHA-256 и metadata. Основной критерий выбора остаётся `macro_f1`, дополнительно выводится `balanced_accuracy`.
+# Независимые train/test datasets
+
+Для следующего этапа используются только индексы раздельных кампанийных datasets; обучение в v0.2.3 не выполняется.

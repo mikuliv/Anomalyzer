@@ -148,3 +148,6 @@ python filin/lab/tools/run_lab_pipeline.py --run-dir filin/lab/output/runs/run_d
 ## Филин v0.2.1 — Docker-to-Docker evaluation
 
 Для сравнения Docker runs меняются `base-time`, `gap-seconds`, `time-scale` и `random-seed`. Каждый run сохраняет собственные manifest, JSONL и datasets; перенос CSV между runs не допускается.
+# Кампания v0.2.3
+
+Независимые executions запускаются только в изолированной Docker-сети. Train и test не смешиваются по run ID.
