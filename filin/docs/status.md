@@ -14,7 +14,7 @@
 | Traffic events | готово | Формируется `traffic_events.jsonl` с учебными событиями активности. |
 | Normalized events | готово | `normalize_events.py` объединяет execution и traffic events. |
 | Dataset report | готово | Отчет учитывает manifest, execution events, traffic events и normalized events. |
-| Feature extraction | прототип | Есть feature catalog, schema, validators, windows и flows builders. |
+| Feature extraction | прототип | Есть feature catalog, schema, validators, windows и flows builders, учебные examples CSV и CLI-проверка примеров. |
 | Model training | планируется | Требуется train/test split, baseline и эксперименты. |
 | Model evaluation | планируется | Требуются precision, recall, F1, confusion matrix, ROC-AUC/PR-AUC. |
 | ONNX export | частично | Есть заготовка, реальная модель пока не экспортируется. |

@@ -74,6 +74,7 @@ Manifest описывает план и разметку сценариев. `ex
 - Есть mock/execute-контур выполнения сценариев.
 - Есть генерация `execution_events.jsonl`, `traffic_events.jsonl`, `normalized_events.jsonl` и `dataset_report.md`.
 - Есть модуль feature extraction: feature catalog, schema, validators, window-level и flow-level CSV.
+- Есть учебные example CSV и CLI-проверка их структуры и базовой арифметики.
 
 В последнем проверочном mock-прогоне формировалось 13 сценариев, 454 traffic events и 480 normalized events.
 

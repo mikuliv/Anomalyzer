@@ -32,6 +32,8 @@ raw events -> normalized events -> feature extraction -> windows.csv / flows.csv
 - `build_windows_dataset.py` - построение window-level датасета;
 - `build_flows_dataset.py` - построение flow-level прототипа.
 
+`validators.py` также проверяет учебные example CSV: наличие label, benign и attack label, числовые признаки, отсутствие бесконечных значений, leakage-поля и базовые арифметические соотношения.
+
 ## Feature catalog
 
 Каталог признаков описывает назначение, источник, уровень агрегации и риск утечки разметки. Поля `scenario_id`, `run_sequence`, planned/actual time, `label`, `label_type` и `mitre_technique_id` не должны попадать в модельные признаки.
@@ -55,6 +57,14 @@ python filin/ml/features/build_flows_dataset.py --manifest filin/lab/output/scen
 ```
 
 Он группирует normalized events по `source_role`, `target_role`, `scenario_id` и `event_type`. После подключения Zeek/Suricata этот слой должен быть расширен реальными сетевыми flow-полями.
+
+Учебные examples CSV проверяются командами:
+
+```powershell
+python filin/ml/features/validators.py --csv filin/datasets/examples/windows_v0_1.example.csv --kind windows
+
+python filin/ml/features/validators.py --csv filin/datasets/examples/flows_v0_1.example.csv --kind flows
+```
 
 ## Обучение моделей
 
