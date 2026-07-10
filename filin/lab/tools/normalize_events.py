@@ -166,23 +166,33 @@ def write_dry_run_sample(output_path: Path) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Нормализация событий лабораторного стенда Филин в JSONL.")
+    parser.add_argument("--run-dir", default=None, help="Папка одного laboratory run.")
     parser.add_argument("--input", default=None, help="Старый режим: путь к execution_events.jsonl.")
     parser.add_argument("--execution-events", default=None, help="Путь к execution_events.jsonl.")
     parser.add_argument("--traffic-events", default=None, help="Путь к traffic_events.jsonl.")
-    parser.add_argument("--output", required=True, help="Путь к выходному normalized_events.jsonl.")
+    parser.add_argument("--output", default=None, help="Путь к выходному normalized_events.jsonl.")
     parser.add_argument("--dry-run", action="store_true", help="Создать небольшой пример без чтения логов.")
     args = parser.parse_args()
 
-    output_path = Path(args.output)
+    if args.run_dir:
+        run_dir = Path(args.run_dir)
+        execution_path = run_dir / "execution_events.jsonl"
+        traffic_path = run_dir / "traffic_events.jsonl"
+        output_path = Path(args.output) if args.output else run_dir / "normalized_events.jsonl"
+    else:
+        output_path = Path(args.output) if args.output else None
+        execution_path = Path(args.execution_events or args.input) if (args.execution_events or args.input) else None
+        traffic_path = Path(args.traffic_events) if args.traffic_events else None
+
+    if output_path is None:
+        raise ValueError("Нужно указать --output или --run-dir.")
     if args.dry_run:
         write_dry_run_sample(output_path)
         print(f"Dry-run нормализации записан: {output_path}")
         return
 
-    execution_path = Path(args.execution_events or args.input) if (args.execution_events or args.input) else None
-    traffic_path = Path(args.traffic_events) if args.traffic_events else None
     if not execution_path and not traffic_path:
-        raise ValueError("Нужно указать --execution-events, --traffic-events или старый параметр --input.")
+        raise ValueError("Нужно указать --run-dir, --execution-events, --traffic-events или старый параметр --input.")
 
     count = normalize_events(execution_path, traffic_path, output_path)
     print(f"Нормализованные события записаны: {output_path}")

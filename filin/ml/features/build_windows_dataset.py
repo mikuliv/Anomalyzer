@@ -276,14 +276,24 @@ def build_windows_dataset(manifest_path: Path, events_path: Path, output_path: P
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Построение window-level датасета признаков Филин v0.1.")
-    parser.add_argument("--manifest", required=True, help="Путь к scenario_manifest.yaml.")
-    parser.add_argument("--events", required=True, help="Путь к normalized_events.jsonl.")
+    parser.add_argument("--run-dir", default=None, help="Папка одного laboratory run.")
+    parser.add_argument("--manifest", default=None, help="Путь к scenario_manifest.yaml.")
+    parser.add_argument("--events", default=None, help="Путь к normalized_events.jsonl.")
     parser.add_argument("--output", required=True, help="Путь к выходному CSV.")
     parser.add_argument("--window-seconds", type=int, default=60, help="Размер временного окна в секундах.")
     args = parser.parse_args()
     if args.window_seconds <= 0:
         raise ValueError("window-seconds должен быть положительным числом.")
-    build_windows_dataset(Path(args.manifest), Path(args.events), Path(args.output), args.window_seconds)
+    if args.run_dir:
+        run_dir = Path(args.run_dir)
+        manifest_path = run_dir / "scenario_manifest.yaml"
+        events_path = run_dir / "normalized_events.jsonl"
+    else:
+        if not args.manifest or not args.events:
+            raise ValueError("Нужно указать --run-dir или оба параметра --manifest и --events.")
+        manifest_path = Path(args.manifest)
+        events_path = Path(args.events)
+    build_windows_dataset(manifest_path, events_path, Path(args.output), args.window_seconds)
 
 
 if __name__ == "__main__":

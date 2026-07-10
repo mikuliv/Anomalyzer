@@ -140,11 +140,21 @@ def build_flows_dataset(manifest_path: Path, events_path: Path, output_path: Pat
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Построение flow-level датасета признаков Филин v0.1.")
-    parser.add_argument("--manifest", required=True, help="Путь к scenario_manifest.yaml.")
-    parser.add_argument("--events", required=True, help="Путь к normalized_events.jsonl.")
+    parser.add_argument("--run-dir", default=None, help="Папка одного laboratory run.")
+    parser.add_argument("--manifest", default=None, help="Путь к scenario_manifest.yaml.")
+    parser.add_argument("--events", default=None, help="Путь к normalized_events.jsonl.")
     parser.add_argument("--output", required=True, help="Путь к выходному CSV.")
     args = parser.parse_args()
-    build_flows_dataset(Path(args.manifest), Path(args.events), Path(args.output))
+    if args.run_dir:
+        run_dir = Path(args.run_dir)
+        manifest_path = run_dir / "scenario_manifest.yaml"
+        events_path = run_dir / "normalized_events.jsonl"
+    else:
+        if not args.manifest or not args.events:
+            raise ValueError("Нужно указать --run-dir или оба параметра --manifest и --events.")
+        manifest_path = Path(args.manifest)
+        events_path = Path(args.events)
+    build_flows_dataset(manifest_path, events_path, Path(args.output))
 
 
 if __name__ == "__main__":

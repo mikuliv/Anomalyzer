@@ -324,11 +324,20 @@ def execute_manifest(
     return completed, failed, skipped
 
 
+def resolve_manifest_path(manifest: str | None, output_dir: str | None) -> Path:
+    if manifest:
+        return Path(manifest)
+    if output_dir:
+        return Path(output_dir) / "scenario_manifest.yaml"
+    raise ValueError("Нужно указать --manifest или --output-dir.")
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Планирование и безопасное выполнение лабораторных сценариев Филин.")
     parser.add_argument("--scenario", default=None, help="Путь к одному YAML-сценарию.")
     parser.add_argument("--scenarios", default=None, help="Путь к папке YAML-сценариев.")
-    parser.add_argument("--manifest", required=True, help="Путь к manifest разметки.")
+    parser.add_argument("--manifest", default=None, help="Путь к manifest разметки.")
+    parser.add_argument("--output-dir", default=None, help="Папка артефактов одного laboratory run.")
     parser.add_argument("--allowed-targets", default=None, help="Список разрешенных целей через запятую.")
     parser.add_argument("--dry-run", action="store_true", help="Проверить сценарии без генерации трафика.")
     parser.add_argument("--execute", action="store_true", help="Выполнить сценарии по существующему manifest.")
@@ -365,7 +374,8 @@ def main() -> None:
     if args.gap_seconds < 0:
         raise ValueError("gap-seconds не может быть отрицательным.")
 
-    manifest_path = Path(args.manifest)
+    manifest_path = resolve_manifest_path(args.manifest, args.output_dir)
+    manifest_path.parent.mkdir(parents=True, exist_ok=True)
 
     if args.execute:
         completed, failed, skipped = execute_manifest(

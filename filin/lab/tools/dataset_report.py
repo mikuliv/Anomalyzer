@@ -80,20 +80,36 @@ def build_report(
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Создание отчета по лабораторному прогону Филин.")
-    parser.add_argument("--manifest", required=True, help="Путь к scenario_manifest.yaml.")
-    parser.add_argument("--events", required=True, help="Путь к execution_events.jsonl.")
+    parser.add_argument("--run-dir", default=None, help="Папка одного laboratory run.")
+    parser.add_argument("--manifest", default=None, help="Путь к scenario_manifest.yaml.")
+    parser.add_argument("--events", default=None, help="Путь к execution_events.jsonl.")
     parser.add_argument("--traffic-events", default=None, help="Путь к traffic_events.jsonl.")
-    parser.add_argument("--normalized", required=True, help="Путь к normalized_events.jsonl.")
-    parser.add_argument("--output", required=True, help="Путь к Markdown-отчету.")
+    parser.add_argument("--normalized", default=None, help="Путь к normalized_events.jsonl.")
+    parser.add_argument("--output", default=None, help="Путь к Markdown-отчету.")
     args = parser.parse_args()
 
+    if args.run_dir:
+        run_dir = Path(args.run_dir)
+        manifest_path = run_dir / "scenario_manifest.yaml"
+        events_path = run_dir / "execution_events.jsonl"
+        traffic_events_path = run_dir / "traffic_events.jsonl"
+        normalized_path = run_dir / "normalized_events.jsonl"
+        output = Path(args.output) if args.output else run_dir / "dataset_report.md"
+    else:
+        if not args.manifest or not args.events or not args.normalized or not args.output:
+            raise ValueError("Нужно указать --run-dir или явные пути --manifest, --events, --normalized и --output.")
+        manifest_path = Path(args.manifest)
+        events_path = Path(args.events)
+        traffic_events_path = Path(args.traffic_events) if args.traffic_events else None
+        normalized_path = Path(args.normalized)
+        output = Path(args.output)
+
     report = build_report(
-        manifest=read_manifest(Path(args.manifest)),
-        execution_events=read_jsonl(Path(args.events)),
-        traffic_events=read_jsonl(Path(args.traffic_events)) if args.traffic_events else [],
-        normalized_events=read_jsonl(Path(args.normalized)),
+        manifest=read_manifest(manifest_path),
+        execution_events=read_jsonl(events_path),
+        traffic_events=read_jsonl(traffic_events_path) if traffic_events_path else [],
+        normalized_events=read_jsonl(normalized_path),
     )
-    output = Path(args.output)
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(report, encoding="utf-8")
     print(f"Отчет записан: {output}")
