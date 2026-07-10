@@ -68,6 +68,20 @@ services:
     security_opt:
       - no-new-privileges:true
 
+  sensor-capture:
+    build:
+      context: .
+      dockerfile: Dockerfile.sensor-capture
+    network_mode: "service:traffic-client"
+    command: ["-i", "eth0", "-U", "-w", "/capture/capture.pcap", "not", "port", "53"]
+    volumes:
+      - ../output/sensor_preflight:/capture
+    cap_add:
+      - NET_RAW
+      - NET_ADMIN
+    security_opt:
+      - no-new-privileges:true
+
   benign-client:
     image: filin-traffic-client:0.1
     command: python client.py --action web_browsing --target target-web --duration 60 --rate-per-minute 5
