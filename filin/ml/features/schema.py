@@ -13,6 +13,9 @@ METADATA_COLUMNS = [
     "source_role",
     "target_role",
     "event_type",
+    "execution_mode",
+    "synthetic",
+    "observation_source",
     "label",
     "label_type",
 ]
@@ -27,6 +30,9 @@ FORBIDDEN_FEATURE_COLUMNS = [
     "label",
     "label_type",
     "mitre_technique_id",
+    "execution_mode",
+    "synthetic",
+    "observation_source",
 ]
 
 

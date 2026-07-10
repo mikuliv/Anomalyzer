@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
+
 from train_baselines import train_baselines
 
 
@@ -20,6 +21,18 @@ def ensure_dataset(path: Path, run_name: str) -> None:
             f"Сначала выполните: python filin/lab/tools/run_lab_pipeline.py --run-dir filin/lab/output/runs/{run_name} "
             "--base-time 2026-07-09T13:00:00Z --mock --window-seconds 60"
         )
+
+
+def run_source(run_name: str) -> str:
+    manifest = REPO_ROOT / "filin" / "lab" / "output" / "runs" / run_name / "scenario_manifest.yaml"
+    if not manifest.exists():
+        return "неизвестный источник"
+    mode = "mock"
+    for line in manifest.read_text(encoding="utf-8").splitlines():
+        if line.startswith("execution_mode:"):
+            mode = line.split(":", 1)[1].strip()
+            break
+    return "события, полученные при реальном выполнении действий внутри Docker-стенда" if mode == "docker" else "синтетические mock-события"
 
 
 def main() -> None:
@@ -50,6 +63,16 @@ def main() -> None:
         random_state=args.random_state,
         min_class_count=args.min_class_count,
     )
+    report = Path(result["report_path"])
+    with report.open("a", encoding="utf-8") as file:
+        file.write(
+            "\n## Происхождение данных\n\n"
+            f"- Train source: {run_source(args.train_run)}.\n"
+            f"- Test source: {run_source(args.test_run)}.\n\n"
+            "Эксперимент оценивает переносимость модели с синтетических mock-событий на события, "
+            "полученные при реальном выполнении действий внутри Docker-стенда. Он не является "
+            "проверкой на реальном производственном трафике.\n"
+        )
     print(f"External experiment: {args.train_run} -> {args.test_run}")
     print(f"Лучшая модель: {result['best_model']}")
     print(f"Отчёт: {result['report_path']}")

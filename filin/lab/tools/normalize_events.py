@@ -74,6 +74,9 @@ def base_normalized_event(event: dict[str, Any], event_source: str, event_type: 
         "label_type": event.get("type"),
         "source_role": event.get("source_role"),
         "target_role": event.get("target_role"),
+        "execution_mode": event.get("execution_mode") or (event.get("details") or {}).get("execution_mode"),
+        "synthetic": event.get("synthetic") if "synthetic" in event else (event.get("details") or {}).get("mock"),
+        "observation_source": event.get("observation_source") or ("generator" if (event.get("details") or {}).get("mock") else None),
         "event_source": event_source,
         "event_type": event_type,
     }

@@ -15,7 +15,7 @@ from schema import get_model_feature_columns
 from validators import validate_dataset
 
 
-WINDOW_METADATA_COLUMNS = ["run_id", "run_sequence", "scenario_id", "window_start", "window_end", "label", "label_type"]
+WINDOW_METADATA_COLUMNS = ["run_id", "run_sequence", "scenario_id", "window_start", "window_end", "label", "label_type", "execution_mode", "synthetic", "observation_source"]
 FEATURE_COLUMNS = [
     "duration_seconds",
     "protocol_id",
@@ -256,6 +256,9 @@ def build_windows_dataset(manifest_path: Path, events_path: Path, output_path: P
             "window_end": format_time(window_end),
             "label": label_data["label"],
             "label_type": label_data["label_type"],
+            "execution_mode": manifest.get("execution_mode", "mock"),
+            "synthetic": manifest.get("execution_mode", "mock") == "mock",
+            "observation_source": "generator" if manifest.get("execution_mode", "mock") == "mock" else "client",
         }
         row.update(aggregate_window(window_events, duration_seconds=window_seconds))
         rows.append(row)

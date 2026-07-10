@@ -13,7 +13,7 @@ import yaml
 from validators import validate_dataset
 
 
-FLOW_METADATA_COLUMNS = ["run_id", "scenario_id", "source_role", "target_role", "event_type", "label", "label_type"]
+FLOW_METADATA_COLUMNS = ["run_id", "scenario_id", "source_role", "target_role", "event_type", "label", "label_type", "execution_mode", "synthetic", "observation_source"]
 FLOW_FEATURE_COLUMNS = [
     "total_events",
     "duration_seconds",
@@ -106,6 +106,9 @@ def build_flow_rows(manifest: dict[str, Any], events: list[dict[str, Any]]) -> l
             "event_type": event_type,
             "label": label,
             "label_type": label_type,
+            "execution_mode": group[0].get("execution_mode", manifest.get("execution_mode", "mock")),
+            "synthetic": group[0].get("synthetic", manifest.get("execution_mode", "mock") == "mock"),
+            "observation_source": group[0].get("observation_source", "generator"),
             "total_events": float(len(group)),
             "duration_seconds": float(duration),
             "event_rate": float(len(group) / duration),
