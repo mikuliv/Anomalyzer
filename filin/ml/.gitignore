@@ -1,0 +1,5 @@
+artifacts/
+reports/
+*.joblib
+!reports/examples/
+!reports/examples/*.md
