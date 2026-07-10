@@ -6,7 +6,7 @@ import math
 from pathlib import Path
 from typing import Any
 
-from schema import get_forbidden_feature_columns, get_model_feature_columns
+from schema import get_feature_profile, get_forbidden_feature_columns, get_model_feature_columns
 
 
 RELATION_TOLERANCE = 0.02
@@ -123,12 +123,25 @@ def validate_flows_relations(rows: list[dict[str, str]]) -> None:
             )
 
 
-def validate_dataset(path: Path, kind: str = "generic") -> None:
+def validate_dataset(path: Path, kind: str = "generic", feature_profile: str | None = None) -> None:
     columns, rows = read_csv_rows(path)
     if not rows:
         raise ValueError(f"CSV-файл пустой: {path}")
     if "label" not in columns:
         raise ValueError("В CSV отсутствует обязательная колонка label.")
+    if feature_profile and feature_profile.startswith("client_"):
+        required = {"run_id","run_sequence","scenario_id","scenario_execution_key","window_index","window_start","window_end","window_duration_seconds","label","execution_mode","synthetic","observation_source","feature_profile","window_event_count","window_has_events"}
+        missing = required-set(columns)
+        if missing: raise ValueError("Отсутствует metadata: "+", ".join(sorted(missing)))
+        profile_features=get_feature_profile(feature_profile)
+        if set(profile_features)-set(columns): raise ValueError("Отсутствуют признаки профиля")
+        for row in rows:
+            if row["feature_profile"]!=feature_profile or row["execution_mode"]!="docker" or row["synthetic"].lower()!="false" or row["observation_source"]!="client": raise ValueError("Некорректная metadata client dataset")
+            if float(row["window_event_count"])<=0 or float(row["window_duration_seconds"])<=0: raise ValueError("Некорректное окно")
+        for row in rows:
+            for key in ("http_4xx_rate","auth_failure_rate","http_event_ratio","tcp_event_ratio","dns_event_ratio","error_action_ratio","successful_action_ratio"):
+                if key in row and not 0<=float(row[key])<=1: raise ValueError("Доля вне диапазона")
+        return
 
     labels = {row.get("label") for row in rows}
     has_benign = "benign" in labels
@@ -151,8 +164,8 @@ def validate_dataset(path: Path, kind: str = "generic") -> None:
         validate_flows_relations(rows)
 
 
-def print_validation_result(path: Path, kind: str = "generic") -> None:
-    validate_dataset(path, kind=kind)
+def print_validation_result(path: Path, kind: str = "generic", feature_profile: str | None = None) -> None:
+    validate_dataset(path, kind=kind, feature_profile=feature_profile)
     print(f"Проверка датасета пройдена: {path}")
 
 
@@ -165,8 +178,9 @@ def main() -> None:
         default="generic",
         help="Тип датасета для дополнительных проверок.",
     )
+    parser.add_argument("--feature-profile", default=None)
     args = parser.parse_args()
-    print_validation_result(Path(args.csv), kind=args.kind)
+    print_validation_result(Path(args.csv), kind=args.kind, feature_profile=args.feature_profile)
 
 
 if __name__ == "__main__":
