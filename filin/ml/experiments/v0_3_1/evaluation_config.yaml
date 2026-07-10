@@ -1,0 +1,7 @@
+experiment_id: filin-v0.3.1-sensor-baseline
+campaign_id: filin-v0.3-zeek-sensor
+random_state: 42
+feature_profiles: [client_core_v0_2, network_sensor_v0_3]
+primary_profile: network_sensor_v0_3
+target: label
+group_column: run_id
