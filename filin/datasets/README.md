@@ -45,7 +45,11 @@ Feature datasets - агрегированные CSV для ML:
 - `windows_v0_1.csv` - признаки по временным окнам;
 - `flows_v0_1.csv` - прототип flow-level представления.
 
-`scenario_id`, `run_sequence` и planned time используются только для разметки и анализа, но не являются входными признаками модели.
+`flows_v0_1.csv` в версии v0.1 является прототипом flow-level датасета и строится на основе normalized events. Полноценные сетевые flow будут расширены после подключения Zeek/Suricata или другого сетевого сенсора.
+
+Поля `run_id`, `run_sequence`, `scenario_id`, `window_start`, `window_end` являются metadata и не используются как входные признаки модели.
+
+Поля `label` и `label_type` являются целевыми/служебными полями и не используются как входные признаки модели.
 
 ## Примеры
 
@@ -55,6 +59,14 @@ Feature datasets - агрегированные CSV для ML:
 - `flows_v0_1.example.csv`.
 
 Они не являются реальным датасетом и нужны только для демонстрации формата.
+
+Проверка учебных примеров:
+
+```powershell
+python filin/ml/features/validators.py --csv filin/datasets/examples/windows_v0_1.example.csv --kind windows
+
+python filin/ml/features/validators.py --csv filin/datasets/examples/flows_v0_1.example.csv --kind flows
+```
 
 ## Ограничения
 

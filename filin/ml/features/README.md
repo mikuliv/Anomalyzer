@@ -32,7 +32,23 @@ python filin/ml/features/build_windows_dataset.py --manifest filin/lab/output/sc
 python filin/ml/features/build_flows_dataset.py --manifest filin/lab/output/scenario_manifest.yaml --events filin/lab/output/normalized_events.jsonl --output filin/lab/output/datasets/flows_v0_1.csv
 ```
 
-После подключения Zeek/Suricata этот датасет должен быть расширен реальными сетевыми flow-полями.
+`flows_v0_1.csv` в версии v0.1 является прототипом flow-level датасета и строится на основе normalized events. Полноценные сетевые flow будут расширены после подключения Zeek/Suricata или другого сетевого сенсора.
+
+## Учебные примеры
+
+Маленькие CSV-примеры находятся в `filin/datasets/examples/`.
+
+Поля `run_id`, `run_sequence`, `scenario_id`, `window_start`, `window_end` являются metadata и не используются как входные признаки модели.
+
+Поля `label` и `label_type` являются целевыми/служебными полями и не используются как входные признаки модели.
+
+Проверка примеров:
+
+```powershell
+python filin/ml/features/validators.py --csv filin/datasets/examples/windows_v0_1.example.csv --kind windows
+
+python filin/ml/features/validators.py --csv filin/datasets/examples/flows_v0_1.example.csv --kind flows
+```
 
 ## Проверка
 

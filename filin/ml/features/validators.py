@@ -1,11 +1,15 @@
 from __future__ import annotations
 
+import argparse
 import csv
 import math
 from pathlib import Path
 from typing import Any
 
 from schema import get_forbidden_feature_columns, get_model_feature_columns
+
+
+RELATION_TOLERANCE = 0.02
 
 
 def read_csv_rows(path: Path) -> tuple[list[str], list[dict[str, str]]]:
@@ -17,7 +21,109 @@ def read_csv_rows(path: Path) -> tuple[list[str], list[dict[str, str]]]:
         return list(reader.fieldnames or []), rows
 
 
-def validate_dataset(path: Path) -> None:
+def numeric_value(row: dict[str, str], column: str, row_number: int) -> float:
+    value = row.get(column, "")
+    if value == "":
+        raise ValueError(f"Пустое значение признака {column} в строке {row_number}.")
+    try:
+        numeric = float(value)
+    except ValueError as error:
+        raise ValueError(f"Признак {column} не приводится к числу в строке {row_number}.") from error
+    if not math.isfinite(numeric):
+        raise ValueError(f"Признак {column} имеет бесконечное значение в строке {row_number}.")
+    return numeric
+
+
+def assert_close(actual: float, expected: float, message: str) -> None:
+    tolerance = max(RELATION_TOLERANCE, abs(expected) * RELATION_TOLERANCE)
+    if abs(actual - expected) > tolerance:
+        raise ValueError(f"{message}: ожидается {expected:.4f}, получено {actual:.4f}")
+
+
+def validate_windows_relations(rows: list[dict[str, str]]) -> None:
+    for row_number, row in enumerate(rows, start=2):
+        duration = numeric_value(row, "duration_seconds", row_number)
+        total_connections = numeric_value(row, "total_connections", row_number)
+        total_packets = numeric_value(row, "total_packets", row_number)
+        total_bytes = numeric_value(row, "total_bytes", row_number)
+        bytes_in = numeric_value(row, "bytes_in", row_number)
+        bytes_out = numeric_value(row, "bytes_out", row_number)
+        packets_in = numeric_value(row, "packets_in", row_number)
+        packets_out = numeric_value(row, "packets_out", row_number)
+
+        assert_close(total_bytes, bytes_in + bytes_out, f"total_bytes не сходится в строке {row_number}")
+        assert_close(total_packets, packets_in + packets_out, f"total_packets не сходится в строке {row_number}")
+
+        if duration > 0:
+            assert_close(
+                numeric_value(row, "bytes_per_second", row_number),
+                total_bytes / duration,
+                f"bytes_per_second не сходится в строке {row_number}",
+            )
+            assert_close(
+                numeric_value(row, "packets_per_second", row_number),
+                total_packets / duration,
+                f"packets_per_second не сходится в строке {row_number}",
+            )
+            assert_close(
+                numeric_value(row, "syn_rate", row_number),
+                numeric_value(row, "tcp_syn_count", row_number) / duration,
+                f"syn_rate не сходится в строке {row_number}",
+            )
+            assert_close(
+                numeric_value(row, "rst_rate", row_number),
+                numeric_value(row, "tcp_rst_count", row_number) / duration,
+                f"rst_rate не сходится в строке {row_number}",
+            )
+
+        if total_packets > 0:
+            assert_close(
+                numeric_value(row, "avg_packet_size", row_number),
+                total_bytes / total_packets,
+                f"avg_packet_size не сходится в строке {row_number}",
+            )
+
+        if total_connections > 0:
+            assert_close(
+                numeric_value(row, "short_connection_ratio", row_number),
+                numeric_value(row, "short_connection_count", row_number) / total_connections,
+                f"short_connection_ratio не сходится в строке {row_number}",
+            )
+            assert_close(
+                numeric_value(row, "failed_connection_ratio", row_number),
+                numeric_value(row, "failed_connection_count", row_number) / total_connections,
+                f"failed_connection_ratio не сходится в строке {row_number}",
+            )
+
+        http_request_count = numeric_value(row, "http_request_count", row_number)
+        if http_request_count > 0:
+            assert_close(
+                numeric_value(row, "http_4xx_rate", row_number),
+                numeric_value(row, "http_4xx_count", row_number) / http_request_count,
+                f"http_4xx_rate не сходится в строке {row_number}",
+            )
+
+        login_attempt_count = numeric_value(row, "login_attempt_count", row_number)
+        if login_attempt_count > 0:
+            assert_close(
+                numeric_value(row, "failed_login_rate", row_number),
+                numeric_value(row, "failed_login_count", row_number) / login_attempt_count,
+                f"failed_login_rate не сходится в строке {row_number}",
+            )
+
+
+def validate_flows_relations(rows: list[dict[str, str]]) -> None:
+    for row_number, row in enumerate(rows, start=2):
+        duration = numeric_value(row, "duration_seconds", row_number)
+        if duration > 0:
+            assert_close(
+                numeric_value(row, "event_rate", row_number),
+                numeric_value(row, "total_events", row_number) / duration,
+                f"event_rate не сходится в строке {row_number}",
+            )
+
+
+def validate_dataset(path: Path, kind: str = "generic") -> None:
     columns, rows = read_csv_rows(path)
     if not rows:
         raise ValueError(f"CSV-файл пустой: {path}")
@@ -37,17 +143,31 @@ def validate_dataset(path: Path) -> None:
 
     for row_number, row in enumerate(rows, start=2):
         for feature in model_features:
-            value = row.get(feature, "")
-            if value == "":
-                raise ValueError(f"Пустое значение признака {feature} в строке {row_number}.")
-            try:
-                numeric = float(value)
-            except ValueError as error:
-                raise ValueError(f"Признак {feature} не приводится к числу в строке {row_number}.") from error
-            if not math.isfinite(numeric):
-                raise ValueError(f"Признак {feature} имеет бесконечное значение в строке {row_number}.")
+            numeric_value(row, feature, row_number)
+
+    if kind == "windows":
+        validate_windows_relations(rows)
+    elif kind == "flows":
+        validate_flows_relations(rows)
 
 
-def print_validation_result(path: Path) -> None:
-    validate_dataset(path)
+def print_validation_result(path: Path, kind: str = "generic") -> None:
+    validate_dataset(path, kind=kind)
     print(f"Проверка датасета пройдена: {path}")
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Проверка CSV-датасетов признаков Филин.")
+    parser.add_argument("--csv", required=True, help="Путь к CSV-файлу.")
+    parser.add_argument(
+        "--kind",
+        choices=("generic", "windows", "flows"),
+        default="generic",
+        help="Тип датасета для дополнительных проверок.",
+    )
+    args = parser.parse_args()
+    print_validation_result(Path(args.csv), kind=args.kind)
+
+
+if __name__ == "__main__":
+    main()
