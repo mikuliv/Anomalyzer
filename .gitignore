@@ -1,34 +1,38 @@
-.venv/
+# Python
 __pycache__/
-.pytest_cache/
-.mypy_cache/
-.idea/
-.vscode/
+*.py[cod]
+*.so
+*.pyd
+
+# Виртуальные окружения
+.venv/
+venv/
+env/
+
+# Локальные настройки
 .env
-*.pt
-*.onnx
-*.pkl
-*.npy
-*.pcap
-*.pcapng
-*.tmp
+.env.*
+!.env.example
+
+# Исторические runtime-данные и логи
 *.log
-*.jsonl
 *.csv
-data/
-datasets/
-!filin/datasets/
-!filin/datasets/README.md
-!filin/datasets/.gitkeep
-!filin/datasets/examples/
-!filin/datasets/examples/*.csv
-!filin/datasets/examples/*.json
-!filin/datasets/examples/*.md
-!filin/datasets/schemas/
-!filin/datasets/schemas/*.json
-!filin/datasets/schemas/*.yaml
-filin/lab/output/
-filin/datasets/raw/
-filin/datasets/processed/
-filin/ml/artifacts/
-filin/ml/reports/
+*.pid
+runtime-system/logstash/data/
+runtime-system/elasticsearch/data/
+runtime-system/data/
+
+# Локальные model artifacts, не входившие в отслеживаемый снимок
+pretrained-models/*.onnx
+pretrained-models/*.pt
+pretrained-models/*.pkl
+pretrained-models/*.npy
+runtime-system/ml-api/*.onnx
+runtime-system/ml-api/*.pkl
+runtime-system/ml-api/*.npy
+
+# Системные и IDE-файлы
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

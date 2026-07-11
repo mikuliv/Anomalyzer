@@ -1,4 +1,0 @@
-run_id,scenario_id,source_role,target_role,event_type,label,label_type,total_events,duration_seconds,event_rate,error_count,request_count,bytes_in,bytes_out,unique_dst_ports,unique_paths,failed_login_count
-run-example,benign_web_browsing,benign-client,target-web,http_request,benign,benign,32,580,0.0552,0,32,42000,9000,1,5,0
-run-example,attack_port_scan,attacker-simulator,target-web,tcp_connect_check,port_scan,attack,36,110,0.3273,24,0,0,0,6,0,0
-run-example,attack_auth_failures,attacker-simulator,target-api,auth_attempt,auth_failures,attack,24,170,0.1412,24,24,12000,3600,1,1,24

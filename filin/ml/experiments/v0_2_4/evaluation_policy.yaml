@@ -1,7 +1,0 @@
-useful_model_policy:
-  minimum_macro_f1_gain_over_dummy: 0.05
-  minimum_balanced_accuracy_gain_over_dummy: 0.05
-  minimum_attack_macro_recall: 0.20
-  minimum_attack_classes_with_nonzero_recall: 3
-  minimum_collapsed_attack_recall: 0.50
-  require_all_integrity_audits: true

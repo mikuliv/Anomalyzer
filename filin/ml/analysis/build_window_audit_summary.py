@@ -1,6 +1,0 @@
-from __future__ import annotations
-import argparse,json
-from pathlib import Path
-def main():
- p=argparse.ArgumentParser(description='Сводный отчёт аудита окон.');p.add_argument('--audit-matrix',required=True);p.add_argument('--window-simulations',nargs='+',required=True);p.add_argument('--output',required=True);a=p.parse_args();m=json.loads(Path(a.audit_matrix).read_text(encoding='utf-8'));s=[json.loads(Path(x).read_text(encoding='utf-8')) for x in a.window_simulations];valid=m['overall_status']=='success';text='# Филин v0.2.2 — аудит оконной агрегации\n\n## Причина ошибки старого датасета\n\nГлобальные planned окна не совпадали с actual timestamps.\n\n## Готовность\n\n- window_pipeline_valid: '+str(valid).lower()+'\n- ready_for_ml: false\n- recommended_window_size_for_next_experiment: 10\n\nПосле исправления временной разметки все Docker client observations корректно назначаются окнам соответствующих scenario executions. Однако каждый attack-класс пока представлен только одним независимым выполнением на run, поэтому данных недостаточно для достоверного обучения многоклассовой модели.\n';Path(a.output).write_text(text,encoding='utf-8');print(a.output)
-if __name__=='__main__':main()
