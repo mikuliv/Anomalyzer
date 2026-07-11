@@ -9,7 +9,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import f1_score,recall_score,balanced_accuracy_score
 from sklearn.dummy import DummyClassifier
 def main():
- p=argparse.ArgumentParser(description='Независимая оценка client и Zeek sensor profiles.');p.add_argument('--output-dir',required=True);a=p.parse_args();out=Path(a.output_dir);out.mkdir(parents=True,exist_ok=True);result={}
+ p=argparse.ArgumentParser(description='Независимая оценка client и Zeek sensor profiles.');p.add_argument('--output-dir',required=True);p.add_argument('--robustness-pattern',default=None);a=p.parse_args();out=Path(a.output_dir);out.mkdir(parents=True,exist_ok=True);result={}
  for profile in ('client_core_v0_2','network_sensor_v0_3'):
   files=sorted(Path('filin/lab/output/datasets').glob(f'windows_{profile}_run_v030_zeek_*.csv'));frames=[pd.read_csv(x) for x in files];train=pd.concat([x for x in frames if '_train_' in x.run_id.iloc[0]]);test=pd.concat([x for x in frames if '_test_' in x.run_id.iloc[0]]);features=[x for x in train.columns if x not in {'run_id','label','label_type','scenario_id','execution_id','scenario_execution_key','feature_profile','observation_source','sensor_type','execution_mode','synthetic'} and pd.api.types.is_numeric_dtype(train[x])];build=lambda:Pipeline([('imputer',SimpleImputer(strategy='median')),('scale',StandardScaler()),('model',LogisticRegression(max_iter=1000,class_weight='balanced',random_state=42))]);folds=[]
   for run in sorted(train.run_id.unique()):

@@ -1,0 +1,15 @@
+campaign_id: filin-v0.3.2-zeek-robustness
+campaign_version: "0.3.2"
+runs:
+  - {run_id: run_v032_topology_001, role: robustness_test, random_seed: 8301, run_index: 1}
+  - {run_id: run_v032_topology_002, role: robustness_test, random_seed: 8302, run_index: 2}
+  - {run_id: run_v032_topology_003, role: robustness_test, random_seed: 8303, run_index: 3}
+  - {run_id: run_v032_background_001, role: robustness_test, random_seed: 8401, run_index: 4}
+  - {run_id: run_v032_background_002, role: robustness_test, random_seed: 8402, run_index: 5}
+  - {run_id: run_v032_background_003, role: robustness_test, random_seed: 8403, run_index: 6}
+  - {run_id: run_v032_temporal_001, role: robustness_test, random_seed: 8501, run_index: 7}
+  - {run_id: run_v032_temporal_002, role: robustness_test, random_seed: 8502, run_index: 8}
+  - {run_id: run_v032_temporal_003, role: robustness_test, random_seed: 8503, run_index: 9}
+  - {run_id: run_v032_combined_001, role: robustness_test, random_seed: 8601, run_index: 10}
+  - {run_id: run_v032_combined_002, role: robustness_test, random_seed: 8602, run_index: 11}
+  - {run_id: run_v032_combined_003, role: robustness_test, random_seed: 8603, run_index: 12}
