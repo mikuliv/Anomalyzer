@@ -1,76 +1,33 @@
-# Датасеты проекта «Филин»
+# Runtime datasets
 
-## Что хранится в Git
+## Назначение
 
-В Git допускаются только README, схемы и маленькие учебные примеры.
+Описание воспроизводимо формируемых feature datasets проекта «Филин».
 
-В этой папке можно хранить:
+## Что реализовано
 
-- описание структуры датасетов;
-- схемы JSON/YAML;
-- маленькие учебные CSV/JSON-примеры;
-- пустые служебные файлы для сохранения структуры.
+Поддерживаются `client_core_v0_2`, `client_extended_v0_2` и `network_sensor_v0_3`. Основной размер sensor window — 60 секунд; фактические короткие executions могут образовывать одну активную строку.
 
-## Что не хранится в Git
+## Входные данные и выходные данные
 
-Сырые логи, jsonl, csv, pcap, модели и большие артефакты не коммитятся.
+Client datasets строятся из client observations. Sensor datasets строятся из correlated Zeek observations. CSV, PCAP, JSONL, indexes и runtime reports не коммитятся.
 
-Не добавляются:
+## Metadata и признаки
 
-- боевые логи;
-- чувствительные данные;
-- большие CSV/JSONL выгрузки;
-- PCAP/PCAPNG;
-- модели и артефакты обучения;
-- локальные отчеты с приватными данными.
+Metadata содержит provenance, role, execution/window и label fields. Model features исключают label, IDs, campaign/robustness metadata, marker fields, raw IP/hostname/URI/port identifier и Zeek UID.
 
-## Уровни данных
+## Labels и роли
 
-```text
-raw events -> normalized events -> feature extraction -> windows.csv / flows.csv -> training
-```
+Labels: `benign`, `port_scan`, `auth_failures`, `web_probe`, `low_rate_dos`, `beacon_simulation`. Train, test и robustness roles разделены audit-ами; hashes включаются в indexes.
 
-## Raw events
+## Проверки
 
-Raw events - исходные события лабораторного стенда, Zeek, Suricata или других источников. Они могут быть большими и содержать чувствительные сведения, поэтому не хранятся в Git.
-
-## Normalized events
-
-`normalized_events.jsonl` - единый формат событий после нормализации. Он нужен для построения признаков, но сам по себе не является готовым обучающим датасетом.
-
-## Feature datasets
-
-Feature datasets - агрегированные CSV для ML:
-
-- `windows_v0_1.csv` - признаки по временным окнам;
-- `flows_v0_1.csv` - прототип flow-level представления.
-
-`flows_v0_1.csv` в версии v0.1 является прототипом flow-level датасета и строится на основе normalized events. Полноценные сетевые flow будут расширены после подключения Zeek/Suricata или другого сетевого сенсора.
-
-Поля `run_id`, `run_sequence`, `scenario_id`, `window_start`, `window_end` являются metadata и не используются как входные признаки модели.
-
-Поля `label` и `label_type` являются целевыми/служебными полями и не используются как входные признаки модели.
-
-## Примеры
-
-Маленькие учебные примеры находятся в `filin/datasets/examples/`:
-
-- `windows_v0_1.example.csv`;
-- `flows_v0_1.example.csv`.
-
-Они не являются реальным датасетом и нужны только для демонстрации формата.
-
-Проверка учебных примеров:
-
-```powershell
-python filin/ml/features/validators.py --csv filin/datasets/examples/windows_v0_1.example.csv --kind windows
-
-python filin/ml/features/validators.py --csv filin/datasets/examples/flows_v0_1.example.csv --kind flows
-```
+Отсутствие runtime dataset в Git не означает отсутствие поддержки профиля. Datasets формируются воспроизводимым campaign pipeline и проверяются по индексам и SHA-256.
 
 ## Ограничения
 
-Датасеты v0.1 предназначены для проверки pipeline. Для обучения итоговых моделей требуется реальный сбор трафика в Docker/VMware-стенде, контроль качества разметки и проверка отсутствия чувствительных данных.
-# Campaign datasets v0.2.3
+Datasets описывают controlled laboratory observations и не являются production corpus.
 
-Campaign metadata является metadata и исключается из model features.
+## Связанные документы
+
+[Происхождение данных](../docs/data-provenance.md), [profiles](../ml/features/README.md), [эксперименты](../docs/experiments.md).

@@ -1,5 +1,35 @@
-# Кампании независимых laboratory runs
+# Campaigns
 
-Кампания v0.2.3 отделяет независимые фактические Docker executions от связанных окон одного выполнения. Train и test используют разные run ID, seeds и параметры сценариев.
+## Назначение
 
-Запуск: `python filin/lab/campaigns/run_campaign.py --campaign filin/lab/campaigns/v0_2_3_independent_executions.yaml --output-root filin/lab/output --strict`.
+Campaign manifest задаёт независимые laboratory runs, seeds, роли train/test/robustness и безопасные параметры сценариев.
+
+## Что реализовано
+
+Campaign runners сохраняют status и checksums; `--resume` предназначен для продолжения незавершённых attempts без повторения успешных фаз.
+
+## Основные файлы
+
+- `v0_3_zeek_sensor.yaml` — независимая sensor campaign v0.3;
+- `v0_3_2_zeek_robustness.yaml` — robustness campaign v0.3.2;
+- `run_sensor_campaign.py` — запуск/продолжение sensor campaign.
+
+## Входные данные и выходные данные
+
+Вход — manifest; выход — run statuses и runtime artifacts в `filin/lab/output/`.
+
+## Запуск
+
+Параметры runner: `python filin/lab/campaigns/run_sensor_campaign.py --help`.
+
+## Проверки
+
+Наличие каталога не равно успеху: учитываются statuses, hashes и последующие audits.
+
+## Ограничения
+
+Campaign roles разделяют данные, но не подтверждают production applicability.
+
+## Связанные документы
+
+[Происхождение данных](../../docs/data-provenance.md), [воспроизводимость](../../docs/reproducibility.md).

@@ -1,62 +1,36 @@
-# Построение признаков Филин
+# Признаки и datasets
 
-Модуль `filin/ml/features` преобразует нормализованные лабораторные события в агрегированные датасеты признаков для будущего обучения моделей.
+## Назначение
 
-Сырые события не являются готовыми признаками для модели. Для обучения используются агрегированные window-level и flow-level датасеты:
+Определение feature profiles, aggregation по scenario execution windows и profile-aware validation.
 
-```text
-raw events -> normalized events -> feature extraction -> windows.csv / flows.csv -> training
-```
+## Что реализовано
 
-## Каталог признаков
+`client_core_v0_2` и `client_extended_v0_2` используют client observations. `network_sensor_v0_3` использует только correlated Zeek observations. Окна формируются по actual execution intervals; metadata и identifiers не являются model features.
 
-`feature_catalog.yaml` описывает признаки v0.1, их уровень агрегации, источник, назначение и риск утечки разметки.
+## Основные файлы
 
-Поля `scenario_id`, `run_sequence`, `planned_started_at`, `planned_finished_at`, `actual_started_at`, `actual_finished_at`, `label`, `label_type` и `mitre_technique_id` используются только как metadata, для разметки и анализа. Они не являются входными признаками модели.
+- `schema.py` — единственный источник feature profiles;
+- `build_windows_dataset.py` — client datasets;
+- `build_network_sensor_dataset.py` — sensor dataset;
+- `validators.py` — structure, provenance и arithmetic checks.
 
-## Window-level датасет
+## Входные данные и выходные данные
 
-Команда строит временные окна фиксированной длины и считает признаки по событиям внутри каждого окна:
+Input — normalized/correlated events и execution metadata. Output CSV — runtime artifact в `filin/lab/output/datasets/`.
 
-```powershell
-python filin/ml/features/build_windows_dataset.py --manifest filin/lab/output/scenario_manifest.yaml --events filin/lab/output/normalized_events.jsonl --output filin/lab/output/datasets/windows_v0_1.csv --window-seconds 60
-```
+## Запуск
 
-Разметка берется из manifest. Если окно пересекается с attack-сценарием, используется label этого сценария. Если окно пересекается только с benign-сценарием, используется `benign`. Если окно не попадает ни в один сценарий, используется `unknown`.
+`python filin/ml/features/validators.py --help`
 
-## Flow-level датасет
+## Проверки
 
-В v0.1 flow-level датасет является прототипом. Он группирует нормализованные лабораторные события по `source_role`, `target_role`, `scenario_id` и `event_type`, а затем считает базовые агрегаты:
+Client profiles не содержат packet/flow fields, которые недоступны client source. Sensor profile исключает label, execution IDs, marker fields, raw endpoints и Zeek UID.
 
-```powershell
-python filin/ml/features/build_flows_dataset.py --manifest filin/lab/output/scenario_manifest.yaml --events filin/lab/output/normalized_events.jsonl --output filin/lab/output/datasets/flows_v0_1.csv
-```
+## Ограничения
 
-`flows_v0_1.csv` в версии v0.1 является прототипом flow-level датасета и строится на основе normalized events. Полноценные сетевые flow будут расширены после подключения Zeek/Suricata или другого сетевого сенсора.
+Packet/flow признаки требуют независимого sensor source; client events не используются для подмены Zeek observations.
 
-## Учебные примеры
+## Связанные документы
 
-Маленькие CSV-примеры находятся в `filin/datasets/examples/`.
-
-Поля `run_id`, `run_sequence`, `scenario_id`, `window_start`, `window_end` являются metadata и не используются как входные признаки модели.
-
-Поля `label` и `label_type` являются целевыми/служебными полями и не используются как входные признаки модели.
-
-Проверка примеров:
-
-```powershell
-python filin/ml/features/validators.py --csv filin/datasets/examples/windows_v0_1.example.csv --kind windows
-
-python filin/ml/features/validators.py --csv filin/datasets/examples/flows_v0_1.example.csv --kind flows
-```
-
-## Проверка
-
-Оба сборщика вызывают базовый валидатор CSV:
-
-- CSV не должен быть пустым;
-- должна быть колонка `label`;
-- должны присутствовать benign и attack label;
-- leakage-поля не должны попадать в список модельных признаков;
-- все модельные признаки должны приводиться к числам;
-- бесконечные значения запрещены.
+[Происхождение данных](../../docs/data-provenance.md), [datasets](../../datasets/README.md).

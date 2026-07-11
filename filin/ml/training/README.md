@@ -1,115 +1,29 @@
-# Baseline training pipeline Филин
+# Загрузка и оценка ML-данных
 
 ## Назначение
 
-Модуль `filin/ml/training/` содержит первичный baseline pipeline для проверки обучения и оценки моделей на лабораторном датасете признаков.
+Загрузка datasets, контроль train/test separation и подготовка данных для экспериментов.
 
-Датасет v0.1 формируется из лабораторных/mock-событий. Он нужен для проверки ML pipeline, feature extraction, защиты от data leakage и формата будущей интеграции с backend. Он не является достаточным основанием для промышленной модели.
+## Что реализовано
 
-## Состав
+Loaders проверяют profile consistency, ordered feature list, hashes и исключают metadata из `X`.
 
-- `split_dataset.py` - подготовка `X/y`, исключение metadata/leakage-полей и безопасный train/test split.
-- `model_registry.py` - реестр baseline-моделей.
-- `train_baselines.py` - обучение baseline-моделей и сохранение лучшей.
-- `evaluate_model.py` - повторная оценка сохранённой модели.
-- `report_writer.py` - формирование Markdown-отчётов.
+## Входные данные и выходные данные
 
-## Модели
+Вход — проверенные runtime datasets. Выход — in-memory matrices и experiment reports.
 
-- `DummyClassifier` со стратегией `most_frequent`;
-- `LogisticRegression` с `class_weight=balanced`;
-- `RandomForestClassifier` с `class_weight=balanced`;
-- `HistGradientBoostingClassifier`.
+## Запуск
 
-## Защита от data leakage
+CLI и параметры конкретных scripts проверяйте через `--help`.
 
-Из модельных признаков исключаются metadata и поля разметки:
+## Проверки
 
-- `run_id`;
-- `run_sequence`;
-- `scenario_id`;
-- `window_start`;
-- `window_end`;
-- `planned_started_at`;
-- `planned_finished_at`;
-- `actual_started_at`;
-- `actual_finished_at`;
-- `label`;
-- `label_type`;
-- `mitre_technique_id`.
+Для v0.3.1 model selection разрешён только на train-runs. Для v0.3.2 frozen model применяется к robustness data без retraining.
 
-Также исключаются поля, содержащие `label`, `scenario`, `run_sequence`, `started_at` и `finished_at`.
+## Ограничения
 
-Сначала выполняется train/test split. Все преобразования, включая imputing и scaling, обучаются только на train-части. SMOTE в baseline v0.1 не используется.
+Этот каталог не выполняет backend integration и не является online inference service.
 
-## Обучение
+## Связанные документы
 
-```powershell
-python filin/ml/training/train_baselines.py --dataset filin/lab/output/datasets/windows_v0_1.csv --target label --output-dir filin/ml/artifacts/baseline_v0_1 --report filin/ml/reports/baseline_v0_1.md
-```
-
-Результат:
-
-- `filin/ml/artifacts/baseline_v0_1/best_model.joblib`;
-- `filin/ml/artifacts/baseline_v0_1/model_metadata.json`;
-- `filin/ml/reports/baseline_v0_1.md`.
-
-## Оценка
-
-```powershell
-python filin/ml/training/evaluate_model.py --model filin/ml/artifacts/baseline_v0_1/best_model.joblib --dataset filin/lab/output/datasets/windows_v0_1.csv --metadata filin/ml/artifacts/baseline_v0_1/model_metadata.json --report filin/ml/reports/evaluate_baseline_v0_1.md
-```
-
-Если оценка выполняется на том же датасете, который использовался при обучении, отчёт содержит предупреждение. Такой результат не является независимой проверкой качества.
-
-## Оценка по разным laboratory runs
-
-Для более честной проверки модель следует обучать на одном прогоне стенда, а оценивать на другом. Это снижает риск того, что модель выучит особенности одного конкретного `run_id` или расписания сценариев.
-
-```powershell
-# Run 001
-python filin/lab/tools/run_lab_pipeline.py --run-dir filin/lab/output/runs/run_001 --base-time 2026-07-09T13:00:00Z --gap-seconds 30 --repeat 1 --mock --window-seconds 60
-
-# Run 002
-python filin/lab/tools/run_lab_pipeline.py --run-dir filin/lab/output/runs/run_002 --base-time 2026-07-10T13:00:00Z --gap-seconds 45 --repeat 1 --mock --window-seconds 60
-
-# Обучение на run_001 и external-test на run_002
-python filin/ml/training/run_external_experiment.py --train-run run_001 --test-run run_002 --target label
-```
-
-Прямой запуск:
-
-```powershell
-python filin/ml/training/train_baselines.py --dataset filin/lab/output/datasets/windows_v0_1_run_001.csv --external-test-dataset filin/lab/output/datasets/windows_v0_1_run_002.csv --target label --output-dir filin/ml/artifacts/baseline_v0_1_external --report filin/ml/reports/baseline_v0_1_external.md
-```
-
-В этом режиме `--dataset` используется только для train, а `--external-test-dataset` только для test. Feature columns определяются по train dataset. Если в external test dataset не хватает признаков, обучение завершается понятной ошибкой. Лишние колонки test игнорируются.
-
-Оценка на отдельном laboratory run является более строгой, чем случайный split внутри одного CSV, но всё ещё не подтверждает качество модели на реальном сетевом трафике, если оба набора сформированы в mock-режиме.
-
-## Метрики
-
-Accuracy не является основной метрикой для задач обнаружения инцидентов. Основное внимание уделяется macro/weighted F1, recall по attack-классам и confusion matrix.
-
-## Ограничения v0.1
-
-- Датасет построен на лабораторных/mock-событиях.
-- Метрики не подтверждают качество модели на реальном сетевом трафике.
-- Нейросетевые модели и финальное обучение планируются после расширения датасета и подключения реального сбора трафика.
-
-## Филин v0.2: mock -> Docker
-
-Для проверки переносимости можно обучить baseline на mock run и оценить его на Docker run:
-
-```powershell
-python filin/ml/training/run_external_experiment.py --train-run run_001 --test-run run_docker_001 --target label
-```
-
-Эксперимент оценивает переносимость модели с синтетических mock-событий на события, полученные при реальном выполнении действий внутри Docker-стенда. Он не является проверкой на производственном трафике.
-
-## Филин v0.2.1 — Docker-to-Docker evaluation
-
-`train_baselines.py` поддерживает повторяемый параметр `--additional-train-dataset`. Внешний test dataset запрещено включать в train; для всех datasets сохраняются SHA-256 и metadata. Основной критерий выбора остаётся `macro_f1`, дополнительно выводится `balanced_accuracy`.
-# Независимые train/test datasets
-
-Для следующего этапа используются только индексы раздельных кампанийных datasets; обучение в v0.2.3 не выполняется.
+[Эксперименты](../../docs/experiments.md), [воспроизводимость](../../docs/reproducibility.md).
