@@ -1,33 +1,48 @@
 # Архитектура
 
-Филин строится как модульная платформа мониторинга и расследования сетевых инцидентов.
+## Реализованная архитектура
 
-Основной поток:
+```mermaid
+flowchart LR
+  S[Безопасный сценарий] --> T[traffic-client]
+  T --> M[Start/end markers]
+  T --> C[capture-sidecar]
+  C --> P[PCAP: Docker named volume]
+  P --> Z[Offline Zeek]
+  Z --> L[Zeek logs]
+  L --> N[Нормализация]
+  M --> I[Sensor-aligned interval]
+  N --> R[Корреляция]
+  I --> R
+  R --> F[Feature builder]
+  F --> D[Dataset]
+  D --> A[Audits и ML evaluation]
+```
 
-`сетевые события -> collector/parser -> извлечение признаков -> ML detection API -> обработчик инцидентов -> сопоставление MITRE -> генератор Sigma -> стенд проверки -> dashboard/SIEM export`
+`traffic-client` выполняет безопасные действия в изолированной сети. Capture-sidecar наблюдает тот же network namespace; PCAP является первичным источником sensor observations. Zeek logs нормализуются до корреляции. Execution markers используются только для временной привязки и исключаются из feature aggregation.
 
-## Компоненты
+## Campaign separation
 
-- `collectors` принимают события из CSV, Zeek, Suricata и будущих источников.
-- модуль извлечения признаков приводит события к единой схеме признаков.
-- `ML detection API` возвращает класс, confidence, уровень риска и важные признаки.
-- обработчик инцидентов формирует карточку инцидента и сохраняет ее в repository.
-- модуль сопоставления MITRE связывает класс детекции с осторожными кандидатами MITRE ATT&CK.
-- генератор Sigma готовит черновик правила по карточке инцидента.
-- стенд проверки проверяет правило и фиксирует FP/FN.
-- `dashboard/SIEM export` является будущим слоем визуализации и передачи результатов.
+```mermaid
+flowchart TB
+  C[Campaign] --> TR[Независимые train runs]
+  C --> TE[Независимые test runs]
+  TR --> SEL[Model selection]
+  TE --> EXT[External evaluation]
+  EXT --> FR[Зафиксированная модель]
+  FR --> RB[Robustness runs: только predict/evaluation]
+```
 
-## Хранилище
+## Концептуальная будущая архитектура
 
-Текущая реализация использует in-memory repository. Интерфейс repository отделен от сервиса инцидентов, чтобы позже заменить хранение на PostgreSQL, Elasticsearch или комбинированную схему.
+```mermaid
+flowchart LR
+  D[Проверенный sensor dataset] --> M[Модель]
+  M -. будущая работа .-> IC[Incident card]
+  IC -. будущая работа .-> MA[MITRE ATT&CK mapping]
+  MA -. будущая работа .-> SG[Sigma draft]
+  SG -. будущая работа .-> SIEM[SIEM integration]
+  IC -. будущая работа .-> UI[Analyst interface]
+```
 
-## Backend API
-
-Минимальные endpoint-ы:
-
-- `GET /health`;
-- `POST /api/v1/predict`;
-- `POST /api/v1/incidents`;
-- `GET /api/v1/incidents/{incident_id}`;
-- `POST /api/v1/sigma/generate`;
-- `POST /api/v1/rules/validate`.
+Концептуальная архитектура. На текущем этапе полностью не реализована.

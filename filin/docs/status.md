@@ -1,32 +1,19 @@
-# Статус компонентов
+# Текущий статус
 
-| Компонент | Статус | Комментарий |
-| --- | --- | --- |
-| Исторический Anomalyzer | готово | Сохранен как базовая версия колледжной ВКР в `Anomalyzer-main/`. |
-| Backend API | прототип | Есть FastAPI endpoint-ы для health, predict, incidents, Sigma и rules validation. |
-| Incident processing | прототип | Формируется карточка инцидента с in-memory хранилищем. |
-| MITRE mapping | прототип | Есть первичная таблица соответствий классов и техник. |
-| Sigma draft generator | прототип | Генерируется Sigma-кандидат, требующий лабораторной проверки. |
-| Лабораторный manifest | готово | Manifest v0.3 фиксирует план, разметку и статусы выполнения, поддержаны отдельные run-директории. |
-| Natural schedule | готово | Attack-сценарии вплетаются в benign-фон. |
-| Mock execute | готово | Формирует синтетические лабораторные события без сетевой активности. |
-| Docker services | прототип | Есть target-web, target-api, control-api, target-ssh-sim, traffic-client и инфраструктурные сервисы. |
-| Docker execute | готово | `traffic-client` выполняет разрешённые HTTP, DNS-like и TCP-действия внутри изолированной сети; события являются client observations. |
-| Docker-to-Docker evaluation | готово | Есть provenance-проверка, SHA-256 datasets, multirun baseline и анализ PSI feature drift. |
-| Traffic events | готово | Формируется `traffic_events.jsonl` с учебными событиями активности. |
-| Normalized events | готово | `normalize_events.py` объединяет execution и traffic events. |
-| Dataset report | готово | Отчет учитывает manifest, execution events, traffic events и normalized events, поддержан `--run-dir`. |
-| Feature extraction | прототип | Есть feature catalog, schema, validators, windows и flows builders, учебные examples CSV и CLI-проверка примеров. |
-| Model training | прототип | Есть baseline pipeline с Dummy, LogisticRegression, RandomForest и HistGradientBoosting, поддержан external test dataset и helper для двух runs. |
-| Model evaluation | прототип | Есть оценка сохранённой модели, Markdown-отчёты и предупреждения о совпадении train/evaluation dataset. |
-| ONNX export | планируется | Экспорт будет добавлен после выбора устойчивой модели. |
-| Dashboard/SIEM export | планируется | Требуются web-ui, Kibana/SIEM сценарии и проверка Sigma-кандидатов. |
-| Zeek collector | частично | Есть заготовка коллектора, требуется реальный разбор логов. |
-| Suricata collector | частично | Есть заготовка коллектора, требуется реальный разбор EVE JSON. |
-| VMware стенд | планируется | Нужен для более реалистичного сбора трафика и PCAP. |
-# Статус v0.2.3
-
-- Независимые train/test executions: готово.
-- Готовность к ML: подтверждена для кампании.
-- Baseline evaluation v0.2.4: выполнена на независимых train/test runs.
-- Независимый сетевой сенсор Zeek v0.3: capture, Zeek processing и sensor campaign завершены.
+| Компонент | Состояние | Последняя подтверждённая версия | Подтверждение | Ограничения |
+| --- | --- | --- | --- | --- |
+| Docker laboratory | Готово | v0.3 | Изолированные campaign runs | Только лабораторная сеть |
+| Безопасные сценарии | Готово | v0.3 | Manifest и execution records | Не являются реальными атаками |
+| Marker-aware executions | Готово | v0.3 | Start/end markers и sensor intervals | Markers не являются features |
+| Passive capture | Готово | v0.3 | Capture-sidecar и PCAP audit | Нет production capture |
+| PCAP storage | Готово | v0.3 | Docker-managed volume и hashes | Runtime artifacts вне Git |
+| Zeek offline processing | Готово | v0.3 | PCAP→Zeek logs | Ограничено видимостью стенда |
+| `network_sensor_v0_3` | Готово | v0.3 | Builders, validators, audits | Ограниченный набор сервисов |
+| Independent train/test campaign | Готово | v0.3 | 6 train + 3 test runs | Лабораторный support |
+| Frozen baseline evaluation | Экспериментально подтверждено | v0.3.1 | Pooled external test | Не production validation |
+| Robustness evaluation | Экспериментально подтверждено | v0.3.2 | 12 external robustness-runs | Controlled shifts, identical metrics требуют осторожности |
+| Backend model integration | Не начато | — | — | Нельзя считать backend готовым |
+| MITRE ATT&CK mapping | Запланировано | — | — | Будущая работа |
+| Sigma generation | Запланировано | — | — | Будущая работа |
+| SIEM integration | Запланировано | — | — | Будущая работа |
+| Production validation | Не выполнено | — | — | Отсутствуют production data и deployment procedure |
