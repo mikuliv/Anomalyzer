@@ -11,6 +11,7 @@ __pycache__/
 *.npy
 *.pcap
 *.pcapng
+*.tmp
 *.log
 *.jsonl
 *.csv
@@ -30,3 +31,4 @@ filin/lab/output/
 filin/datasets/raw/
 filin/datasets/processed/
 filin/ml/artifacts/
+filin/ml/reports/
